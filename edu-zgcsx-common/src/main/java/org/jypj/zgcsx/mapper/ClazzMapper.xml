@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jypj.zgcsx.dao.ClazzDao" >
+
+    <resultMap id="BaseResultMap" type="org.jypj.zgcsx.entity.Clazz" >
+        <id column="ID" property="id" jdbcType="VARCHAR" />
+        <result column="XXID" property="xxid" jdbcType="VARCHAR" />
+        <result column="XQID" property="xqid" jdbcType="VARCHAR" />
+        <result column="XZ" property="xz" jdbcType="VARCHAR" />
+        <result column="SYJXMSM" property="syjxmsm" jdbcType="VARCHAR" />
+        <result column="JBNY" property="jbny" jdbcType="DATE" />
+        <result column="SSNJ" property="ssnj" jdbcType="VARCHAR" />
+        <result column="WLLX" property="wllx" jdbcType="VARCHAR" />
+        <result column="SFSSMZSYJXB" property="sfssmzsyjxb" jdbcType="VARCHAR" />
+        <result column="BYRQ" property="byrq" jdbcType="DATE" />
+        <result column="BZR" property="bzr" jdbcType="VARCHAR" />
+        <result column="BZRID" property="bzrid" jdbcType="VARCHAR" />
+        <result column="FBZR" property="fbzr" jdbcType="VARCHAR" />
+        <result column="FBZRID" property="fbzrid" jdbcType="VARCHAR" />
+        <result column="BJMC" property="bjmc" jdbcType="VARCHAR" />
+        <result column="BJLBM" property="bjlbm" jdbcType="VARCHAR" />
+        <result column="BJRYCH" property="bjrych" jdbcType="VARCHAR" />
+        <result column="BZID" property="bzid" jdbcType="VARCHAR" />
+        <result column="BZQID" property="bzqid" jdbcType="VARCHAR" />
+        <result column="JBID" property="jbid" jdbcType="VARCHAR" />
+        <result column="XZXID" property="xzxid" jdbcType="VARCHAR" />
+        <result column="BJZT" property="bjzt" jdbcType="VARCHAR" />
+        <result column="FLAG" property="flag" jdbcType="VARCHAR" />
+        <result column="VALID" property="valid" jdbcType="VARCHAR" />
+    </resultMap>
+  
+    <sql id="Base_Column_List" >
+        ID,XXID,XQID,XZ,SYJXMSM,JBNY,SSNJ,WLLX,SFSSMZSYJXB,BYRQ,BZR,BZRID,FBZR,FBZRID,BJMC,BJLBM,BJRYCH,BZID,BZQID,JBID,XZXID,BJZT,FLAG,VALID,CREATE_USER,CREATE_TIME,MODIFY_USER,MODIFY_TIME
+    </sql>
+  
+
+
+</mapper>

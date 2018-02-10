@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.SpaceMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="SpaceResultMap" type="org.jypj.zgcsx.course.entity.Space">
+        <id column="SM_ID" property="id"/>
+        <result column="SM_NAME" property="name"/>
+        <result column="SM_DESCRIBE" property="description"/>
+        <result column="SM_ADDRESS" property="address"/>
+        <result column="SM_VOLUME" property="volume"/>
+        <result column="SM_CAMPUS_CODE" property="campusCode"/>
+        <result column="SM_ARCH_CODE" property="archCode"/>
+        <result column="SM_TYPE_CODE" property="typeCode"/>
+        <result column="SM_FLOOR_CODE" property="floorCode"/>
+        <result column="SM_CAMPUS_NAME" property="campusName"/>
+        <result column="SM_ARCH_NAME" property="archName"/>
+        <result column="SM_TYPE_NAME" property="typeName"/>
+        <result column="SM_FLOOR_NAME" property="floorName"/>
+        <result column="SM_CODE" property="code"/>
+        <result column="SM_REPEATABLE" property="repeatable"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="SpaceColumnList">
+        SM.ID AS SM_ID,
+        SM.MC AS SM_NAME,
+        SM.DESCRIBE AS SM_DESCRIBE,
+        SM.VOLUME AS SM_VOLUME,
+        SM.CAMPUS AS SM_CAMPUS_CODE,
+        SM.BUILDINGID AS SM_CODE,
+        SM.ADDR AS SM_ADDRESS,
+        SM.ARCHITECTURE AS SM_ARCH_CODE,
+        SM.SPTYPE AS SM_TYPE_CODE,
+        SM.FLOORID AS SM_FLOOR_CODE,
+        SM.FLAG AS SM_REPEATABLE,
+        (SELECT ITEM_TEXT FROM EIMS_CODEMAP_DATA WHERE ITEM_VALUE = SM.CAMPUS AND CODEID = (SELECT ID FROM EIMS_CODEMAP WHERE CODE = 'cims_campus')) AS SM_CAMPUS_NAME,
+        (SELECT ITEM_TEXT FROM EIMS_CODEMAP_DATA WHERE ITEM_VALUE = SM.ARCHITECTURE AND CODEID = (SELECT ID FROM EIMS_CODEMAP WHERE CODE = 'cims_arch')) AS SM_ARCH_NAME,
+        (SELECT ITEM_TEXT FROM EIMS_CODEMAP_DATA WHERE ITEM_VALUE = SM.SPTYPE AND CODEID = (SELECT ID FROM EIMS_CODEMAP WHERE CODE = 'cims_sptype')) AS SM_TYPE_NAME,
+        (SELECT ITEM_TEXT FROM EIMS_CODEMAP_DATA WHERE ITEM_VALUE = SM.FLOORID AND CODEID = (SELECT ID FROM EIMS_CODEMAP WHERE CODE = 'cims_floor')) AS SM_FLOOR_NAME
+    </sql>
+
+    <sql id="SpaceTableName">
+        SPACE_MANAGE SM
+    </sql>
+
+    <select id="selectAll" resultMap="SpaceResultMap" parameterType="map">
+        SELECT
+            <include refid="SpaceColumnList"/>
+        FROM
+            <include refid="SpaceTableName"/>
+        <where>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(name)">
+                AND SM.MC LIKE '%'||#{name}||'%'
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(campusCode)">
+                AND SM.CAMPUS = #{campusCode}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(typeCode)">
+                AND SM.SPTYPE = #{typeCode}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(floorCode)">
+                AND SM.FLOORID = #{floorCode}
+            </if>
+        </where>
+        ORDER BY SM.CAMPUS,SM.ARCHITECTURE,SM.FLOORID,SM.SPTYPE,SM.ID
+    </select>
+
+    <select id="selectById" resultMap="SpaceResultMap">
+        SELECT
+            <include refid="SpaceColumnList"/>
+        FROM
+            <include refid="SpaceTableName"/>
+        <where>
+            SM.ID = #{id}
+        </where>
+    </select>
+</mapper>

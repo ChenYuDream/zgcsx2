@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.CodeMapDataMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="CodeMapDataResultMap" type="org.jypj.zgcsx.course.entity.CodeMapData">
+        <id column="CD_ID" property="id"/>
+        <result column="CD_ITEM_VALUE" property="itemValue"/>
+        <result column="CD_ITEM_TEXT" property="itemText"/>
+        <result column="CD_CODE" property="code"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="CodeMapDataColumnList">
+        CD.ID AS CD_ID,
+        CD.ITEM_VALUE AS CD_ITEM_VALUE,
+        CD.ITEM_TEXT AS CD_ITEM_TEXT
+    </sql>
+
+    <sql id="CodeMapDataTableName">
+        EIMS_CODEMAP_DATA CD
+    </sql>
+    
+    <select id="selectCodeMapDataByCode" parameterType="string" resultMap="CodeMapDataResultMap">
+        SELECT <include refid="CodeMapDataColumnList"/> FROM EIMS_CODEMAP CM LEFT JOIN <include refid="CodeMapDataTableName"/> ON CM.ID = CD.CODEID WHERE CM.CODE = #{code}  ORDER BY CM.SORTORDER,CD.SORTORDER
+    </select>
+
+    <select id="selectCodeMapDataByCodes" resultMap="CodeMapDataResultMap">
+        SELECT
+            <include refid="CodeMapDataColumnList"/>,
+            CM.CODE AS CD_CODE
+        FROM EIMS_CODEMAP CM
+        LEFT JOIN <include refid="CodeMapDataTableName"/> ON CM.ID = CD.CODEID
+        WHERE CM.CODE IN 
+        <foreach collection="codes" item="code" separator="," open="(" close=")">
+            #{code}
+        </foreach>
+        ORDER BY CM.SORTORDER,CD.SORTORDER
+    </select>
+
+</mapper>

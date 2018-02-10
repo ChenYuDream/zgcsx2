@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.dao.CodeMapDao">
+
+    <select id="queryCodemap" parameterType="java.lang.String" resultType="org.jypj.zgcsx.entity.CodeMap">
+		select j3.ID as codeId,j3.item_value as itemValue,j3.item_text as itemText
+		from eims_codemap k3
+		left join eims_codemap_data j3 on k3.id = j3.codeid
+		where k3.code like '%${code}%' order by j3.sortorder
+	</select>
+
+    <select id="queryItemText" parameterType="java.util.Map" resultType="java.lang.String">
+		select item_text from eims_codemap_data where codeid=(select id from eims_codemap where code = #{code}) and item_value=#{itemValue}
+	</select>
+
+    <select id="selectAllEvaluateLevels" parameterType="string" resultType="org.jypj.zgcsx.entity.CodeMap">
+		SELECT CD.ID AS codeid,CD.item_value,CD.item_text FROM EIMS_CODEMAP C LEFT JOIN EIMS_CODEMAP_DATA CD ON C.ID = CD.CODEID
+		WHERE C.CODE = 'kc_eva_level' ORDER BY CD.SORTORDER
+	</select>
+</mapper>   

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">      
+<mapper namespace="org.jypj.zgcsx.dao.UserDao">
+
+
+    <select id="getObjectWithXnXq" resultType="org.jypj.zgcsx.entity.User" parameterType="string">
+        select u.userid,u.loginname,u.username,u.nickname,u.usertype,u.userid,t.xn,t.xq
+        from eims_user u, (
+        select *
+        FROM ZXXX_XNXQ XNXQ
+        WHERE XNXQ.XQKSSJ = (
+            SELECT MAX(XQKSSJ)
+            FROM ZXXX_XNXQ
+            WHERE XQKSSJ &lt;= sysdate
+        )
+        ) t
+        where 1=1 and  u.userid=#{userId}
+    </select>
+
+    <select id="getTeacherXxidXqId" resultType="org.jypj.zgcsx.entity.User" parameterType="string">
+          select t.id as userid,t.xxid as xxid,t.xqid as xqid from zxjz_jbxx t
+          where 1=1 and t.id=#{userId}
+    </select>
+
+    <select id="getStudentXxidXqId" resultType="org.jypj.zgcsx.entity.User" parameterType="string">
+          select t.id as userid,t.xxid as xxid,t.xqid as xqid from zxxs_jbxx t
+          where 1=1 and t.id=#{userId}
+    </select>
+
+    <select id="getWuYeXxidXqId" resultType="org.jypj.zgcsx.entity.User">
+        select t.id as userid,t.xxid as xxid,t.xqid as xqid from ZXJZ_WYGL t
+          where 1=1 and t.id=#{userId}
+    </select>
+
+</mapper>

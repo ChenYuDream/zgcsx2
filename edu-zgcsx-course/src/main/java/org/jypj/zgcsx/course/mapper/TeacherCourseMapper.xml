@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.TeacherCourseMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="TeacherCourseResultMap" type="org.jypj.zgcsx.course.entity.TeacherCourse">
+        <id column="TC_ID" property="id"/>
+        <result column="TC_CREATE_USER" property="createUser"/>
+        <result column="TC_UPDATE_USER" property="updateUser"/>
+        <result column="TC_CREATE_TIME" property="createTime"/>
+        <result column="TC_UPDATE_TIME" property="updateTime"/>
+        <result column="TC_TEACHER_ID" property="teacherId"/>
+        <result column="TC_OPTIONAL_COURSE_ID" property="optionalCourseId"/>
+
+        <!-- 非数据映射字段 -->
+        <result column="TC_COURSE_NAME" property="courseName"/>
+        <result column="TC_TEANHER_NAME" property="teacherName"/>
+        <result column="TC_CHOOSE_STUDENT_COUNT" property="chooseStudentCount"/>
+        <result column="TC_ITEM_TEXT" property="itemText"/>
+
+        <!--选修课详情表-->
+        <association property="optionalCourse" resultMap="org.jypj.zgcsx.course.dao.OptionalCourseMapper.TeacherOptionalCourseResultMap"/>
+        <!--日程详情-->
+        <association property="workDay" resultMap="org.jypj.zgcsx.course.dao.WorkDayMapper.WorkDayResultMap"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="TeacherCourseColumnList">
+        TC.ID AS TC_ID,
+        TC.CREATE_USER AS TC_CREATE_USER,
+        TC.UPDATE_USER AS TC_UPDATE_USER,
+        TC.CREATE_TIME AS TC_CREATE_TIME,
+        TC.UPDATE_TIME AS TC_UPDATE_TIME,
+        TC.TEACHER_ID AS TC_TEACHER_ID,
+        TC.OPTIONAL_COURSE_ID AS TC_OPTIONAL_COURSE_ID
+    </sql>
+
+    <!--日程列-->
+    <sql id="WorkDayColumnList">
+        WD.ID AS WD_ID,
+        WD.CREATE_USER AS WD_CREATE_USER,
+        WD.UPDATE_USER AS WD_UPDATE_USER,
+        WD.CREATE_TIME AS WD_CREATE_TIME,
+        WD.UPDATE_TIME AS WD_UPDATE_TIME,
+        WD.XN AS WD_XN,
+        WD.XQ AS WD_XQ,
+        WD.WEEK_OF_TERM AS WD_WEEK_OF_TERM,
+        WD.DAY_OF_WEEK AS WD_DAY_OF_WEEK,
+        WD.PERIOD AS WD_PERIOD,
+        WD.START_TIME AS WD_START_TIME,
+        WD.END_TIME AS WD_END_TIME
+    </sql>
+
+    <sql id="OptionalCourseColumnList">
+        OC.ID AS OC_ID,
+        OC.CREATE_USER AS OC_CREATE_USER,
+        OC.UPDATE_USER AS OC_UPDATE_USER,
+        OC.CREATE_TIME AS OC_CREATE_TIME,
+        OC.UPDATE_TIME AS OC_UPDATE_TIME,
+        OC.XN AS OC_XN,
+        OC.XQ AS OC_XQ,
+        OC.SCHOOL_ID AS OC_SCHOOL_ID,
+        OC.CAMPUS_ID AS OC_CAMPUS_ID,
+        OC.COURSE_ID AS OC_COURSE_ID,
+        --OC.COURSE_TYPE AS OC_COURSE_TYPE,
+        OC.ALIAS_NAME AS OC_ALIAS_NAME,
+        OC.DESCRIPTION AS OC_DESCRIPTION,
+        OC.USER_ID AS OC_USER_ID,
+        OC.SPACE_ID AS OC_SPACE_ID,
+        OC.SPACE_NAME AS OC_SPACE_NAME,
+        OC.COURSE_REMIND AS OC_COURSE_REMIND,
+        OC.START_TIME AS OC_START_TIME,
+        OC.END_TIME AS OC_END_TIME,
+        OC.COURSE_STATUS AS OC_COURSE_STATUS,
+        OC.COVER_ID AS OC_COVER_ID,
+        OC.CHOOSE_START_TIME AS OC_CHOOSE_START_TIME,
+        OC.CHOOSE_END_TIME AS OC_CHOOSE_END_TIME,
+        OC.NOTICE_LEVEL AS OC_NOTICE_LEVEL,
+        OC.LIMIT_COUNT AS OC_LIMIT_COUNT,
+        OC.LIMIT_SEX AS OC_LIMIT_SEX,
+        OC.COURSE_NAME AS TC_COURSE_NAME
+    </sql>
+
+    <sql id="TeacherCourseTableName">
+        KC_TEACHER_COURSE TC
+    </sql>
+
+    <select id="selectTeacherCourse" resultMap="TeacherCourseResultMap">
+        SELECT
+            TC.CREATE_USER AS TC_CREATE_USER,
+            TC.UPDATE_USER AS TC_UPDATE_USER,
+            TC.CREATE_TIME AS TC_CREATE_TIME,
+            TC.UPDATE_TIME AS TC_UPDATE_TIME,
+            TC.TEACHER_ID AS TC_TEACHER_ID,
+            TC.OPTIONAL_COURSE_ID AS TC_OPTIONAL_COURSE_ID,
+            <include refid="OptionalCourseColumnList"/>, OC.XXLB AS OC_COURSE_TYPE,
+            <include refid="WorkDayColumnList"/>,
+            (SELECT COUNT(0) FROM KC_STUDENT_COURSE S WHERE S.OPTIONAL_COURSE_ID = TC.OPTIONAL_COURSE_ID AND S.STATUS = 1) AS TC_CHOOSE_STUDENT_COUNT
+        FROM <include refid="TeacherCourseTableName"/>
+        LEFT JOIN (SELECT O.*,B.COURSE_NAME,B.XXLB FROM  KC_OPTIONAL_COURSE O LEFT JOIN KC_BASE_COURSE B ON O.COURSE_ID = B.ID) OC ON TC.OPTIONAL_COURSE_ID = OC.ID
+        LEFT JOIN (SELECT T.OPTIONAL_COURSE_ID,W.* FROM KC_OPTIONAL_TIMETABLE T LEFT JOIN KC_WORK_DAY W ON T.WORK_DAY_ID = W.ID) WD ON OC.ID = WD.OPTIONAL_COURSE_ID
+        WHERE WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq} AND WD.WEEK_OF_TERM = #{teacherCourse.week} AND OC.COURSE_STATUS = 2
+        AND TC.TEACHER_ID = #{teacherCourse.teacherId}
+    </select>
+
+    <select id="selectChooseWork" resultMap="TeacherCourseResultMap">
+        SELECT
+          <include refid="TeacherCourseColumnList"/>,
+          <include refid="OptionalCourseColumnList"/>, OC.XXLB AS OC_COURSE_TYPE,
+          KC.ITEM_TEXT AS TC_ITEM_TEXT,
+          (SELECT COUNT(0) FROM KC_STUDENT_COURSE S WHERE S.OPTIONAL_COURSE_ID = TC.OPTIONAL_COURSE_ID AND S.STATUS = 1) AS TC_CHOOSE_STUDENT_COUNT
+        FROM <include refid="TeacherCourseTableName"/>
+        LEFT JOIN (SELECT O.*,B.COURSE_NAME,B.KCDJ,B.XXLB FROM  KC_OPTIONAL_COURSE O LEFT JOIN KC_BASE_COURSE B ON O.COURSE_ID = B.ID) OC ON TC.OPTIONAL_COURSE_ID = OC.ID
+        LEFT JOIN (SELECT J.ITEM_VALUE,J.ITEM_TEXT FROM EIMS_CODEMAP K LEFT JOIN EIMS_CODEMAP_DATA J ON K.ID = J.CODEID WHERE K.CODE = 'cims_kcly_sc') KC ON KC.ITEM_VALUE = OC.KCDJ
+        WHERE OC.XN = #{xnxq.xn} AND OC.XQ = #{xnxq.xq} AND OC.COURSE_STATUS = 2
+        AND TC.TEACHER_ID = #{teacherCourse.teacherId}
+    </select>
+</mapper>

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.OptionalCourseMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="OptionalCourseResultMap" type="org.jypj.zgcsx.course.entity.OptionalCourse">
+        <id column="OC_ID" property="id"/>
+        <result column="OC_CREATE_USER" property="createUser"/>
+        <result column="OC_UPDATE_USER" property="updateUser"/>
+        <result column="OC_CREATE_TIME" property="createTime"/>
+        <result column="OC_UPDATE_TIME" property="updateTime"/>
+        <result column="OC_XN" property="xn"/>
+        <result column="OC_XQ" property="xq"/>
+        <result column="OC_SCHOOL_ID" property="schoolId"/>
+        <result column="OC_CAMPUS_ID" property="campusId"/>
+        <result column="OC_COURSE_ID" property="courseId"/>
+        <result column="OC_COURSE_TYPE" property="courseType"/>
+        <result column="OC_ALIAS_NAME" property="aliasName"/>
+        <result column="OC_DESCRIPTION" property="description"/>
+        <result column="OC_USER_ID" property="userId"/>
+        <result column="OC_SPACE_ID" property="spaceId"/>
+        <result column="OC_COURSE_REMIND" property="courseRemind"/>
+        <result column="OC_START_TIME" property="startTime"/>
+        <result column="OC_END_TIME" property="endTime"/>
+        <result column="OC_COURSE_STATUS" property="courseStatus"/>
+        <result column="OC_COVER_ID" property="coverId"/>
+        <result column="OC_CHOOSE_START_TIME" property="chooseStartTime"/>
+        <result column="OC_CHOOSE_END_TIME" property="chooseEndTime"/>
+        <result column="OC_NOTICE_LEVEL" property="noticeLevel"/>
+        <result column="OC_LIMIT_COUNT" property="limitCount"/>
+        <result column="OC_LIMIT_SEX" property="limitSex"/>
+        <result column="OC_STUDENT_COUNT" property="studentCount"/>
+        <result column="OC_COURSE_NAME" property="courseName"/>
+        <result column="OC_XXLB" property="xxlb"/>
+        <result column="OC_CAMPUS_NAME" property="campusName"/>
+        <result column="OC_SCHOOL_NAME" property="schoolName"/>
+        <result column="OC_LACK_COUNT" property="lackCount"/>
+        <association property="baseCourse" resultMap="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseResultMap"/>
+    </resultMap>
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="DetailOptionalCourseResultMap" type="org.jypj.zgcsx.course.entity.OptionalCourse" extends="OptionalCourseResultMap">
+        <association property="space" column="{id=OC_SPACE_ID}" select="org.jypj.zgcsx.course.dao.SpaceMapper.selectById"/>
+    </resultMap>
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="TeacherOptionalCourseResultMap" type="org.jypj.zgcsx.course.entity.OptionalCourse" extends="DetailOptionalCourseResultMap">
+        <collection column="{id=OC_ID}" property="teachers" select="org.jypj.zgcsx.course.dao.TeacherMapper.selectTeachersByOptionalCourseId"/>
+    </resultMap>
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="TeacherClazzOptionalCourseResultMap" type="org.jypj.zgcsx.course.entity.OptionalCourse" extends="TeacherOptionalCourseResultMap">
+        <collection column="{id=OC_ID}" property="clazzes" select="org.jypj.zgcsx.course.dao.ClazzMapper.selectClazzesByOptionalCourseId"/>
+    </resultMap>
+    
+    <resultMap id="FullOptionalCourseResultMap" type="org.jypj.zgcsx.course.entity.OptionalCourse" extends="TeacherClazzOptionalCourseResultMap">
+        <collection column="{id=OC_ID}" property="workDays" select="org.jypj.zgcsx.course.dao.WorkDayMapper.selectWorkDaysByOptionalCourseId"/>
+        <collection column="{id=OC_ID}" property="evaluateElements" select="org.jypj.zgcsx.course.dao.EvaluateElementMapper.selectEvaluateElementsByOptionalCourseId"/>
+    </resultMap>
+
+    <resultMap id="WorkDayOptionalCourseResultMap" type="org.jypj.zgcsx.course.entity.OptionalCourse" extends="DetailOptionalCourseResultMap">
+        <collection column="{id=OC_ID}" property="workDays" select="org.jypj.zgcsx.course.dao.WorkDayMapper.selectWorkDaysByOptionalCourseId"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="OptionalCourseColumnList">
+        OC.ID AS OC_ID,
+        OC.CREATE_USER AS OC_CREATE_USER,
+        OC.UPDATE_USER AS OC_UPDATE_USER,
+        OC.CREATE_TIME AS OC_CREATE_TIME,
+        OC.UPDATE_TIME AS OC_UPDATE_TIME,
+        OC.XN AS OC_XN,
+        OC.XQ AS OC_XQ,
+        OC.SCHOOL_ID AS OC_SCHOOL_ID,
+        OC.CAMPUS_ID AS OC_CAMPUS_ID,
+        OC.COURSE_ID AS OC_COURSE_ID,
+        OC.COURSE_TYPE AS OC_COURSE_TYPE,
+        OC.ALIAS_NAME AS OC_ALIAS_NAME,
+        OC.DESCRIPTION AS OC_DESCRIPTION,
+        OC.USER_ID AS OC_USER_ID,
+        OC.SPACE_ID AS OC_SPACE_ID,
+        OC.COURSE_REMIND AS OC_COURSE_REMIND,
+        OC.START_TIME AS OC_START_TIME,
+        OC.END_TIME AS OC_END_TIME,
+        OC.COURSE_STATUS AS OC_COURSE_STATUS,
+        OC.COVER_ID AS OC_COVER_ID,
+        OC.CHOOSE_START_TIME AS OC_CHOOSE_START_TIME,
+        OC.CHOOSE_END_TIME AS OC_CHOOSE_END_TIME,
+        OC.NOTICE_LEVEL AS OC_NOTICE_LEVEL,
+        OC.LIMIT_COUNT AS OC_LIMIT_COUNT,
+        OC.LIMIT_SEX AS OC_LIMIT_SEX
+    </sql>
+    <!-- 通用查询结果列 -->
+    <sql id="DetailOptionalCourseColumnList">
+        <include refid="OptionalCourseColumnList"/>
+        ,<include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseColumnList"/>
+        ,XQ.XQMC AS OC_CAMPUS_NAME
+        ,XX.XXMC AS OC_SCHOOL_NAME
+        ,BC.COURSE_NAME AS OC_COURSE_NAME
+        ,BC.XXLB AS OC_XXLB
+        ,NVL(SCC.STUDENT_COUNT,0) AS OC_STUDENT_COUNT
+    </sql>
+
+    <sql id="OptionalCourseTableName">
+        KC_OPTIONAL_COURSE OC
+    </sql>
+
+    <sql id="DetailOptionalCourseTableName">
+        <include refid="OptionalCourseTableName"/>
+        LEFT JOIN KC_BASE_COURSE BC ON OC.COURSE_ID = BC.ID
+        LEFT JOIN ZXXX_XQ XQ ON XQ.ID = OC.CAMPUS_ID
+        LEFT JOIN ZXXX_JBXX XX ON XX.ID = OC.SCHOOL_ID
+        LEFT JOIN (
+            SELECT OPTIONAL_COURSE_ID,COUNT(*) AS STUDENT_COUNT
+            FROM KC_STUDENT_COURSE
+            GROUP BY OPTIONAL_COURSE_ID
+        ) SCC ON OC.ID = SCC.OPTIONAL_COURSE_ID
+    </sql>
+
+    <select id="selectAll" parameterType="map" resultMap="TeacherClazzOptionalCourseResultMap">
+        SELECT
+            <include refid="DetailOptionalCourseColumnList"/>
+        FROM <include refid="DetailOptionalCourseTableName"/>
+        <where>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xn)">
+                AND OC.XN = #{xn}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xq)">
+                AND OC.XQ = #{xq}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(campusId)">
+                AND OC.CAMPUS_ID = #{campusId}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(aliasName)">
+                AND OC.ALIAS_NAME LIKE '%'||#{aliasName}||'%'
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xxlb)">
+                AND BC.XXLB = #{xxlb}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(kclb)">
+                AND BC.KCLB = #{kclb}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(courseStatus)">
+                AND OC.COURSE_STATUS = #{courseStatus}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(teacherId)">
+                AND EXISTS (SELECT 1 FROM KC_TEACHER_COURSE WTC WHERE WTC.TEACHER_ID = #{teacherId} AND WTC.OPTIONAL_COURSE_ID = OC.ID)
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(workDayId)">
+                AND EXISTS (SELECT 1 FROM KC_OPTIONAL_TIMETABLE WOT WHERE WOT.OPTIONAL_COURSE_ID = OC.ID AND WOT.WORK_DAY_ID = #{workDayId})
+            </if>
+        </where>
+        ORDER BY OC.CAMPUS_ID,OC.CREATE_TIME DESC,OC.ID
+    </select>
+
+    <select id="selectById" parameterType="string" resultMap="FullOptionalCourseResultMap">
+        SELECT
+            <include refid="DetailOptionalCourseColumnList"/>
+        FROM <include refid="DetailOptionalCourseTableName"/>
+        <where>
+            OC.ID = #{id}
+        </where>
+    </select>
+
+
+    <select id="selectChooseCourseIsEnd" resultType="java.lang.Integer">
+        SELECT COUNT(0) FROM (SELECT O.*,B.XXLB FROM KC_OPTIONAL_COURSE O LEFT JOIN KC_BASE_COURSE B ON B.ID = O.COURSE_ID) OC
+        WHERE OC.CAMPUS_ID = #{campusId} AND OC.XN = #{xnxq.xn} AND OC.XQ = #{xnxq.xq} AND OC.COURSE_STATUS = 2 AND OC.CHOOSE_END_TIME > #{now}
+    </select>
+
+    <select id="selectLaskChooseCourse" resultMap="WorkDayOptionalCourseResultMap">
+        SELECT
+        <include refid="OptionalCourseColumnList"/>,
+        NVL(SC.STUDENT_COUNT, 0) AS OC_STUDENT_COUNT,
+        (OC.LIMIT_COUNT - NVL(SC.STUDENT_COUNT, 0)) AS OC_LACK_COUNT--未分配学生数量
+        FROM (SELECT O.*,B.XXLB FROM KC_OPTIONAL_COURSE O LEFT JOIN KC_BASE_COURSE B ON B.ID = O.COURSE_ID) OC
+        LEFT JOIN (SELECT COUNT(STUDENT_ID) AS STUDENT_COUNT ,OPTIONAL_COURSE_ID FROM KC_STUDENT_COURSE WHERE STATUS = 1 GROUP BY OPTIONAL_COURSE_ID) SC ON SC.OPTIONAL_COURSE_ID = OC.ID
+        WHERE OC.CAMPUS_ID = #{campusId} AND OC.XN = #{xnxq.xn} AND OC.XQ = #{xnxq.xq} AND OC.XXLB = 2 AND OC.COURSE_STATUS = 2 AND OC.LIMIT_COUNT > NVL(SC.STUDENT_COUNT, 0)
+        ORDER BY OC_LACK_COUNT
+    </select>
+
+    <select id="selectChooseCourseClazz" resultMap="TeacherClazzOptionalCourseResultMap">
+        SELECT
+        <include refid="OptionalCourseColumnList"/>
+        FROM (SELECT O.*,B.XXLB FROM KC_OPTIONAL_COURSE O LEFT JOIN KC_BASE_COURSE B ON B.ID = O.COURSE_ID) OC
+        WHERE OC.CAMPUS_ID = #{campusId} AND OC.XN = #{xnxq.xn} AND OC.XQ = #{xnxq.xq} AND OC.XXLB = 2 AND OC.COURSE_STATUS = 2
+    </select>
+</mapper>

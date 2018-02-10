@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<#include "common-tpl/head.html"/>
+<body  :class="@skin" class="skin ms-controller" ms-controller="main">
+<#include "common-tpl/right-wrap.html"/>
+<div class="container">
+    <!-- 主内容区域 S-->
+    <div class="main" style="padding-left: 0;">
+        <#include "common-tpl/common-nav.html"/>
+        <!-- table切换 E-->
+        <section class="main-wrap">
+            <div class="content">
+                <!-- 模版切换 S-->
+                <xmp :widget="{is:'ms-changeRole',
+                               dataList:@roleInfo,
+                               roleChangeUrl:@roleChangeUrl,
+                               roleSize:@roleSize}"/></xmp>
+                <!-- 模版切换 E-->
+                <#include "common-tpl/footer.html"/>
+            </div>
+        </section>
+    </div>
+    <!-- 主内容区域 E-->
+</div>
+</body>
+</html>
+<script>
+    avalon.config({debug: false});
+    var _tpl = heredoc(function(){
+        /*
+         <div class="db-nav text-center clearfix">
+         <a :for="(index,el) in @dataList"
+         :click="@gotoFn($event,el)" href="#this">
+         <img class="default" :attr="{src:'${ctx}/role/image?imageName='+el.roleCode+'(1).png'}" alt="">
+         <img :attr="{src:'${ctx}/role/image?imageName='+el.roleCode+'(2).png'}" alt="">
+         </a>
+         </div>
+         */
+    });
+
+    var vmChangeRole;
+    avalon.component("ms-changeRole",{
+        template:_tpl,
+        defaults:{
+            onInit:function(e){
+                vmChangeRole = e.vmodel;
+            },
+            dataList:[],
+            roleSize:'',
+            roleChangeUrl:'',
+            gotoFn:function(e,el){
+                e.preventDefault();
+                e.stopPropagation();
+                layer.confirm("<div class='text-center'>您是否要切换到<b>《" + el.roleName + "》</b>角色?</div>",{title:'角色切换',btnAlign:'c'},function(){
+                    window.location.href = vmChangeRole.$model.roleChangeUrl +"?roleId="+ el.id +"&roleSize="+ vmChangeRole.$model.roleSize +"&roleName="+ encodeURIComponent(el.roleName);
+                });
+            }
+        }
+    });
+
+</script>

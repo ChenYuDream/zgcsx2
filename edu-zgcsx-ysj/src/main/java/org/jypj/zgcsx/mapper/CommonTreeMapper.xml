@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.dao.CommonTreeDao">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="org.jypj.zgcsx.entity.CommonTree">
+		<result column="nodeId" property="id" />
+		<result column="nodeName" property="nodeName" />
+		<collection property="subTree" ofType="org.jypj.zgcsx.entity.CommonTree">
+			<result column="nodeId" property="id" />
+			<result column="nodeName" property="nodeName" />
+		</collection>
+	</resultMap>
+
+	<select id="getSchoolInfoTree" resultType="org.jypj.zgcsx.entity.CommonTree">
+		select t.id ,t.xxjc as nodeName from zxxx_jbxx t where t.valid='1'
+	</select>
+	<select id="getCampusInfoTree" resultType="org.jypj.zgcsx.entity.CommonTree"  parameterType="string">
+		select t.id ,t.XQMC as nodeName from ZXXX_XQ t where t.xxid=#{schoolId} and t.valid='1'
+	</select>
+	<select id="getGradeInfoTree" resultType="org.jypj.zgcsx.entity.CommonTree" parameterType="string">
+		select t.id ,t.jbmc as nodeName from zxxx_njxx t where t.xqid=#{campusId} and t.valid='1'
+	</select>
+	<select id="getClassInfoTree" resultType="org.jypj.zgcsx.entity.CommonTree" parameterType="string">
+		select t.id ,concat(t.BJMC,'班') as nodeName from ZXXX_BJXX t where  t.JBID=#{gradeId} and t.valid='1'
+		order by to_number(t.BJMC)
+	</select>
+	<select id="getCampusAllInfoTree" resultType="org.jypj.zgcsx.entity.CommonTree">
+		select t.id ,t.XQMC as nodeName from ZXXX_XQ t where  t.valid='1'
+	</select>
+	<select id="getGradeAllInfoTree" resultType="org.jypj.zgcsx.entity.CommonTree">
+		select t.id ,t.jbmc as nodeName from zxxx_njxx t where  t.valid='1'
+	</select>
+	<select id="getClassAllInfoTree" resultType="org.jypj.zgcsx.entity.CommonTree">
+		select t.id ,concat(t.BJMC,'班') as nodeName from ZXXX_BJXX t where t.valid='1'
+	</select>
+
+
+</mapper>

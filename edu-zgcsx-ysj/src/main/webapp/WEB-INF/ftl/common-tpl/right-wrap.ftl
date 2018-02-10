@@ -1,0 +1,1 @@
+<xmp :widget="{is:'ms-toolSkin',isShow:@skinShow,isShowFn:@skinFn,skin:@skin,saveFn:@saveSkinFn,_path:@sysPath,commonUrl:@commonUrl,userId:@_data.userId}"/></xmp>

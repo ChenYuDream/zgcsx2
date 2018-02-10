@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.TeacherMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="TeacherResultMap" type="org.jypj.zgcsx.course.entity.Teacher">
+        <id column="T_ID" property="id"/>
+        <result column="T_NAME" property="name"/>
+        <result column="T_OLD_NAME" property="oldName"/>
+        <result column="T_ALIAS_NAME" property="aliasName"/>
+        <result column="T_SEX" property="sex"/>
+        <result column="T_ID_CARD" property="idCard"/>
+
+        <!-- 非数据映射字段 -->
+        <result column="T_CAMPUS_NAME" property="campusName"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="TeacherColumnList">
+        T.ID AS T_ID,
+        T.XM AS T_NAME,
+        T.CYM AS T_OLD_NAME,
+        T.XBM AS T_SEX,
+        T.SFZJH AS T_ID_CARD,
+        T.BM AS T_ALIAS_NAME,
+        T.VALID AS T_VALID
+    </sql>
+
+    <sql id="TeacherTableName">
+        ZXJZ_JBXX T
+    </sql>
+    
+    <select id="selectTeachersByOptionalCourseId" resultMap="TeacherResultMap">
+        SELECT
+            <include refid="TeacherColumnList"/>
+        FROM
+            KC_TEACHER_COURSE TC
+        LEFT JOIN <include refid="TeacherTableName"/> ON TC.TEACHER_ID = T.ID
+        <where>
+            TC.OPTIONAL_COURSE_ID = #{id}
+        </where>
+    </select>
+
+    <!--    分割线 避免冲突  -->
+
+    <select id="selectTeachers" resultMap="TeacherResultMap">
+        SELECT
+          <include refid="TeacherColumnList"/>,
+          XQ.XQMC AS T_CAMPUS_NAME
+        FROM <include refid="TeacherTableName"/>
+        LEFT JOIN ZXXX_XQ XQ ON T.XQID = XQ.ID
+        WHERE T.VALID = 1 AND T.XQID = #{campusId}
+        <if test="name != null and name != ''">
+            AND T.XM LIKE '%'||#{name}||'%'
+        </if>
+        <if test="sex != null and sex != ''">
+            AND T.XBM = #{sex}
+        </if>
+        ORDER BY T.XM, T.ID
+    </select>
+
+    <select id="selectByTree" parameterType="map" resultMap="TeacherResultMap">
+        SELECT
+            <include refid="TeacherColumnList"/>
+        FROM <include refid="TeacherTableName"/>
+        <where>
+            <choose>
+                <when test="treeId == 'NON_TREE'">
+                    NOT EXISTS (SELECT 1 FROM EIMS_PERSON_TREE PT WHERE PT.TEACHERID = T.ID)
+                </when>
+                <when test="treeId == 'NON_SCHOOL'">
+                    T.ISINNER = '0'
+                </when>
+                <otherwise>
+                    EXISTS (
+                        SELECT 1 FROM EIMS_PERSON_TREE PT
+                        LEFT JOIN EIMS_TREE ETT ON PT.NODEID = ETT.ID
+                        WHERE PT.TEACHERID = T.ID AND (
+                            PT.NODEID IN (
+                                SELECT ID AS TREE_ID FROM EIMS_TREE ET START WITH ET.ID=#{treeId} CONNECT BY ET.PARENTID = PRIOR ET.ID
+                            ) OR ETT.PARENTID = '0'
+                        )
+                    )
+                </otherwise>
+            </choose>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(sex)">
+                AND T.XBM = #{sex}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(name)">
+                AND T.XM LIKE '%'||#{name}||'%'
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(idCard)">
+                AND T.SFZJH LIKE '%'||#{idCard}||'%'
+            </if>
+        </where>
+    </select>
+
+
+    <select id="selectTeachersByClazzId" resultMap="TeacherResultMap">
+        SELECT
+        <include refid="TeacherColumnList"/>
+        FROM
+        KC_CLAZZ_TIMETABLE CT
+        LEFT JOIN <include refid="TeacherTableName"/> ON CT.TEACHER_ID = T.ID
+        <where>
+            CT.WORK_DAY_ID = #{workDayId}
+        </where>
+        AND CT.CLAZZ_ID = #{clazzId}
+    </select>
+</mapper>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.dao.EimsPersonTreeDao">
+
+	<resultMap id="EimsPersonTreeResult" type="org.jypj.zgcsx.entity.EimsPersonTree">
+		<id property="id" column="id" />
+		<result property="nodeId" column="nodeid" />
+		<result property="nodeName" column="nodename" />
+		<result property="teacherId" column="teacherid" />
+		<result property="teacherName" column="teachername" />
+		<result property="teacherbm" column="teacherbm" />
+		<result property="sex" column="sex" />
+	</resultMap>
+
+	<select id="queryPersonTreeByMap" parameterType="map" resultType="org.jypj.zgcsx.entity.EimsPersonTree">
+		SELECT P.ID,p.NODEID,p.NODENAME,p.TEACHERID,p.TEACHERNAME,p.TEACHERBM,p.CTIME,p.MTIME,z.XBM AS SEX FROM EIMS_PERSON_TREE P inner JOIN ZXJZ_JBXX Z ON P.TEACHERID=Z.ID
+		INNER JOIN EIMS_TREE E ON P.NODEID=E.ID WHERE 1=1  AND Z.VALID='1'
+		<if test="nodeids !=null ">
+			and  P.NODEID IN
+			<foreach collection="nodeids" item="codeId" index="index"
+					 open="(" close=")" separator=",">
+				#{codeId}
+			</foreach>
+		</if>
+		<if test="searchKey != null and searchKey !='' and searchValue!= null and searchValue !='' ">
+			AND ${searchKey} LIKE CONCAT(CONCAT('%',#{searchValue}),'%')
+		</if>
+		<if test="xbm != null and xbm !='' ">
+			AND Z.XBM =#{xbm,jdbcType=VARCHAR}
+		</if>
+		<if test="xm != null and xm !=''">
+			AND Z.XM LIKE CONCAT(CONCAT('%',#{xm,jdbcType=VARCHAR}),'%')
+		</if>
+		<if test="sfzjh != null and sfzjh !=''">
+			AND Z.SFZJH LIKE CONCAT(CONCAT('%',#{sfzjh,jdbcType=VARCHAR}),'%')
+		</if>
+	</select>
+
+    <select id="queryNoticeTeacher" resultType="org.jypj.zgcsx.entity.EimsPersonTree" parameterType="string">
+		select z.id as teacherId,z.xm as teacherName,z.bm as teacherbm from course_notice_person person inner join course_notice notice on person.notice_id=notice.id
+												  inner join ZXJZ_JBXX Z on z.id=person.person_id
+		where 1=1 and person.notice_id=#{noticeId} and (person.OPER is null or person.OPER='1')
+	</select>
+
+	<select id="queryTeacher" resultType="org.jypj.zgcsx.entity.EimsPersonTree" parameterType="string">
+		select z.id as teacherId,z.xm as teacherName from  ZXJZ_JBXX Z
+		  where 1=1 and z.id=#{userId}
+	</select>
+    <select id="queryPersonTreeNoContactByMap" resultType="org.jypj.zgcsx.entity.EimsPersonTree" parameterType="map">
+		select ID,'noContactId' as nodeid, '非通讯录人员' as nodename,ID as teacherid,XM as teachername,BM as teacherbm,CREATE_TIME as ctime,MODIFY_TIME as MTIME,z.XBM as SEX from ZXJZ_JBXX Z WHERE 1=1
+		AND NOT EXISTS ( SELECT 1 FROM EIMS_PERSON_TREE P WHERE P.TEACHERID=Z.ID)
+		<if test="xbm != null and xbm !='' ">
+			AND Z.XBM =#{xbm,jdbcType=VARCHAR}
+		</if>
+		<if test="xm != null and xm !=''">
+			AND Z.XM LIKE CONCAT(CONCAT('%',#{xm,jdbcType=VARCHAR}),'%')
+		</if>
+		<if test="sfzjh != null and sfzjh !=''">
+			AND Z.SFZJH LIKE CONCAT(CONCAT('%',#{sfzjh,jdbcType=VARCHAR}),'%')
+		</if>
+		and z.VALID='1'
+	</select>
+
+
+	<select id="queryPersonTreeAllByMap" resultType="org.jypj.zgcsx.entity.EimsPersonTree" parameterType="map">
+	   select * from (
+			select P.ID,P.NODEID as nodeid, P.Nodename as nodename,Z.ID as teacherid,Z.XM as teachername,Z.BM as teacherbm,Z.CREATE_TIME as ctime,Z.MODIFY_TIME as MTIME,z.XBM as SEX from ZXJZ_JBXX Z
+			inner join EIMS_PERSON_TREE P on P.TEACHERID=Z.ID
+			INNER JOIN EIMS_TREE E ON P.NODEID=E.ID
+			where 1=1 and z.valid='1'
+			<if test="nodeids !=null ">
+				and  P.NODEID IN
+				<foreach collection="nodeids" item="codeId" index="index"
+						 open="(" close=")" separator=",">
+					#{codeId}
+				</foreach>
+			</if>
+			union all
+			select ID,'noContactId' as nodeid, '非通讯录人员' as nodename,ID as teacherid,XM as teachername,BM as teacherbm,CREATE_TIME as ctime,MODIFY_TIME as MTIME,z.XBM as SEX from ZXJZ_JBXX Z WHERE 1=1 and z.valid='1'
+			AND NOT EXISTS ( SELECT 1 FROM EIMS_PERSON_TREE P WHERE P.TEACHERID=Z.ID)
+		 ) t
+		where 1=1
+		<if test="xbm != null and xbm !='' ">
+			AND t.SEX =#{xbm,jdbcType=VARCHAR}
+		</if>
+		<if test="xm != null and xm !=''">
+			AND t.teachername LIKE CONCAT(CONCAT('%',#{xm,jdbcType=VARCHAR}),'%')
+		</if>
+	</select>
+
+
+	<delete id="delPersonByNodeIds" parameterType="map">
+		<if test="nodeIds !=null ">
+			delete from eims_person_tree where NODEID in
+			<foreach collection="nodeIds" item="codeId" index="index"
+					 open="(" close=")" separator=",">
+				#{codeId}
+			</foreach>
+		</if>
+	</delete>
+
+</mapper>

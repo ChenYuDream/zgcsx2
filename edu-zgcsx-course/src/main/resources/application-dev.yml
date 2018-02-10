@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@172.16.30.103:1521:orcl
+    username: eims
+    password: eims
+  redis:
+    #redis地址
+    host: 172.16.30.103
+    #redis端口，默认为6379
+    port: 6379
+    #redis密码，默认为空
+    password: 12345
+  http:
+    multipart:
+      #单个文件大小
+      max-file-size: 10MB
+      #单次请求文件大小限制
+      max-request-size: 150MB
+course:
+  #cas服务端地址
+  cas-server-prefix: http://172.16.30.103/cas
+  #cas客户端地址
+  cas-service: http://172.16.32.126:81/course
+  #common项目路径
+  common-url: http://172.16.32.126:83/common
+  #系统编号
+  system-num: 8
+  #登出地址
+  logout-matcher: /logout
+  #一周第一天是周几：monday,tuesday,wednesday,thursday,friday,saturday,sunday
+  first-day-of-week: sunday
+  #教师评价学生上传资源截止时间：选修课课程结束的14天（两周）后
+  evaluate-end-day: 14
+FTP:
+  SERVER:
+    IP: 172.16.30.103
+    PORT: 21
+  LOGINNAME: ftpuser
+  PASSWORD: 1qaz@WSX
+APACHE:
+  SERVER: 172.16.30.103:89/

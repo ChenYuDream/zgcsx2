@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.StudentCourseMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="org.jypj.zgcsx.course.entity.StudentCourse">
+        <id column="SC_ID" property="id"/>
+        <result column="SC_CREATE_USER" property="createUser"/>
+        <result column="SC_UPDATE_USER" property="updateUser"/>
+        <result column="SC_CREATE_TIME" property="createTime"/>
+        <result column="SC_UPDATE_TIME" property="updateTime"/>
+        <result column="SC_OPTIONAL_COURSE_ID" property="optionalCourseId"/>
+        <result column="SC_STUDENT_ID" property="studentId"/>
+        <result column="SC_COURSE_TYPE" property="courseType"/>
+        <result column="SC_TEACHER_ID" property="teacherId"/>
+        <result column="SC_STATUS" property="status"/>
+        <result column="SC_AUDIT_REASON" property="auditReason"/>
+        <result column="SC_AUDIT_TIME" property="auditTime"/>
+        <result column="SC_CHOSEN" property="chosen"/>
+        <result column="SC_AUTO_ALLOT" property="autoAllot"/>
+        <result column="SC_GRADE_NAME" property="gradeName"/>
+        <result column="SC_DESCRIPTION" property="description"/>
+    </resultMap>
+
+    <resultMap id="StudentResultMap" type="org.jypj.zgcsx.course.entity.StudentCourse" extends="BaseResultMap">
+        <!--学生信息-->
+        <association property="student" resultMap="org.jypj.zgcsx.course.dao.StudentMapper.StudentResultMap"/>
+    </resultMap>
+
+    <resultMap id="StudentCourseResultMap" type="org.jypj.zgcsx.course.entity.StudentCourse" extends="StudentResultMap">
+        <association property="optionalCourse" resultMap="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseResultMap"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="StudentCourseColumnList">
+        SC.ID AS SC_ID,
+        SC.CREATE_USER AS SC_CREATE_USER,
+        SC.UPDATE_USER AS SC_UPDATE_USER,
+        SC.CREATE_TIME AS SC_CREATE_TIME,
+        SC.UPDATE_TIME AS SC_UPDATE_TIME,
+        SC.OPTIONAL_COURSE_ID AS SC_OPTIONAL_COURSE_ID,
+        SC.STUDENT_ID AS SC_STUDENT_ID,
+        SC.COURSE_TYPE AS SC_COURSE_TYPE,
+        SC.TEACHER_ID AS SC_TEACHER_ID,
+        SC.STATUS AS SC_STATUS,
+        SC.AUDIT_REASON AS SC_AUDIT_REASON,
+        SC.AUDIT_TIME AS SC_AUDIT_TIME,
+        SC.AUTO_ALLOT AS SC_AUTO_ALLOT,
+        SC.GRADE_NAME AS SC_GRADE_NAME
+    </sql>
+
+    <sql id="StudentCourseTableName">
+        KC_STUDENT_COURSE SC
+    </sql>
+
+    <!--学生信息-->
+    <sql id="StudentColumnList">
+        S.ID AS S_ID,
+        S.XM AS S_NAME,
+        S.CYM AS  S_ALIAS_NAME,
+        S.XJH AS S_CODE,
+        S.GJXJH AS S_STUDENT_CODE,
+        S.SFZJH AS S_ID_CARD,
+        S.XB AS S_SEX,
+        S.XQID AS S_CAMPUS_ID,
+        S.JBID AS S_GRADE_ID,
+        S.BJID AS S_CLAZZ_ID,
+        S.LXDH AS S_MOBILE
+    </sql>
+
+    <select id="selectStudents" resultMap="StudentResultMap">
+        SELECT
+          <include refid="StudentCourseColumnList"/>,
+          <include refid="StudentColumnList"/>,
+          ZB.JBMC AS S_GRADE_NAME,ZB.BJMC AS S_CLAZZ_NAME,
+          SA.DESCRIPTION AS SC_DESCRIPTION
+        FROM <include refid="StudentCourseTableName"/>
+        LEFT JOIN ZXXS_JBXX S ON S.ID = SC.STUDENT_ID
+        LEFT JOIN (SELECT BJ.*,NJ.JBMC FROM ZXXX_BJXX BJ LEFT JOIN ZXXX_NJXX NJ ON BJ.JBID = NJ.ID) ZB ON ZB.ID = S.BJID
+        LEFT JOIN KC_STUDENT_ATTENDANCE SA ON SA.STUDENT_ID = SC.STUDENT_ID AND SA.WORK_DAY_ID = #{workDayId}
+        WHERE SC.OPTIONAL_COURSE_ID = #{optionalCourseId}
+        AND ZB.VALID = 1
+        <if test="notShow == true">
+            AND SC.STUDENT_ID NOT IN  (SELECT STUDENT_ID FROM KC_STUDENT_ATTENDANCE WHERE WORK_DAY_ID = #{workDayId})
+        </if>
+        ORDER BY S.XM,S.ID
+    </select>
+    
+    <select id="selectAllStudentCourse" parameterType="map" resultMap="StudentCourseResultMap">
+        SELECT
+            <include refid="StudentColumnList"/>,
+            SOC.*,
+            XQ.XQMC AS S_CAMPUS_NAME,
+            G.JBMC AS S_GRADE_NAME,
+            C.BJMC AS S_CLAZZ_NAME,
+            DECODE(SOC.OC_ID,NULL,0,1) AS SC_CHOSEN
+        FROM ZXXS_JBXX S
+        LEFT JOIN (
+            SELECT
+                <include refid="StudentCourseColumnList"/>
+                ,<include refid="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseColumnList"/>
+                ,BC.COURSE_NAME AS OC_COURSE_NAME
+                ,BC.XXLB AS OC_XXLB
+            FROM <include refid="StudentCourseTableName"/>
+            LEFT JOIN KC_OPTIONAL_COURSE OC ON SC.OPTIONAL_COURSE_ID = OC.ID
+            <if test='showType == "2"'>
+                AND EXISTS(SELECT 1 FROM KC_BASE_COURSE BCT WHERE BCT.ID = OC.COURSE_ID AND BCT.XXLB = '2')
+            </if>
+            LEFT JOIN KC_BASE_COURSE BC ON OC.COURSE_ID = BC.ID
+            WHERE OC.XN = #{xn} AND OC.XQ = #{xq}
+        ) SOC ON S.ID = SOC .SC_STUDENT_ID
+        LEFT JOIN ZXXX_XQ XQ ON S.XQID = XQ.ID
+        LEFT JOIN ZXXX_NJXX G ON S.JBID = G.ID
+        LEFT JOIN ZXXX_BJXX C ON S.BJID = C.ID
+        <where>
+            S.VALID = '1'
+            <if test='showType == "2"'>
+                AND G.SSNJ &gt;= 3 AND DECODE(SOC.OC_ID,NULL,'1',NVL(SOC.SC_AUTO_ALLOT,'0')) = '1'
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(campusId)">
+                AND S.XQID = #{campusId}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(gradeId)">
+                AND S.JBID = #{gradeId}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(clazzId)">
+                AND S.BJID = #{clazzId}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(studentName)">
+                AND S.XM LIKE '%'||#{studentName}||'%'
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(autoAllot)">
+                AND NVL(SOC.SC_AUTO_ALLOT,'0') = #{autoAllot}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(chosen)">
+                AND CASE WHEN SOC.OC_ID IS NULL THEN 0 ELSE 1 END = #{chosen}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xxlb)">
+                AND SOC.OC_XXLB = #{xxlb}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(aliasName)">
+                AND SOC.OC_ALIAS_NAME LIKE '%'||#{aliasName}||'%'
+            </if>
+        </where>
+        ORDER BY S.XQID, G.SSNJ, TO_NUMBER(C.BJMC), S.XM, S.XB, SOC.OC_COURSE_ID NULLS LAST, SOC.OC_XXLB
+    </select>
+    
+    <select id="selectAllHistory" parameterType="map" resultMap="StudentCourseResultMap">
+        SELECT
+            <include refid="StudentCourseColumnList"/>
+            ,<include refid="StudentColumnList"/>
+            ,<include refid="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseColumnList"/>
+            ,<include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseColumnList"/>
+            ,XQ.XQMC AS S_CAMPUS_NAME
+            ,G.JBMC AS S_GRADE_NAME
+            ,C.BJMC AS S_CLAZZ_NAME
+        FROM KC_STUDENT_COURSE SC
+        LEFT JOIN KC_OPTIONAL_COURSE OC ON SC.OPTIONAL_COURSE_ID = OC.ID
+        LEFT JOIN KC_BASE_COURSE BC ON OC.COURSE_ID = BC.ID
+        LEFT JOIN ZXXS_JBXX S ON SC.STUDENT_ID = S.ID
+        LEFT JOIN ZXXX_XQ XQ ON S.XQID = XQ.ID
+        LEFT JOIN ZXXX_NJXX G ON S.JBID = G.ID
+        LEFT JOIN ZXXX_BJXX C ON S.BJID = C.ID
+        <where>
+            S.VALID = '1'
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xn)">
+                AND OC.XN = #{xn}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xq)">
+                AND OC.XQ = #{xq}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(campusId)">
+                AND S.XQID = #{campusId}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(gradeName)">
+                AND SC.GRADE_NAME LIKE '%'||#{gradeName}||'%'
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(studentName)">
+                AND S.XM LIKE '%'||#{studentName}||'%'
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xxlb)">
+                AND BC.XXLB = #{xxlb}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(aliasName)">
+                AND OC.ALIAS_NAME LIKE '%'||#{aliasName}||'%'
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(courseName)">
+                AND BC.COURSE_NAME LIKE '%'||#{courseName}||'%'
+            </if>
+        </where>
+        ORDER BY S.XQID, SC.GRADE_NAME NULLS LAST, G.SSNJ, TO_NUMBER(C.BJMC), S.XM, S.XB, BC.XXLB
+    </select>
+    
+    <select id="selectAllByAllot" parameterType="map" resultMap="StudentCourseResultMap">
+        SELECT
+            <include refid="StudentCourseColumnList"/>
+            ,<include refid="StudentColumnList"/>
+            ,<include refid="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseColumnList"/>
+            ,BC.COURSE_NAME AS OC_COURSE_NAME
+            ,BC.XXLB AS OC_XXLB
+            ,XQ.XQMC AS S_CAMPUS_NAME
+            ,G.JBMC AS S_GRADE_NAME
+            ,C.BJMC AS S_CLAZZ_NAME
+            ,CASE WHEN OC.ID IS NULL THEN 0 ELSE 1 END AS SC_CHOSEN
+        FROM ZXXS_JBXX S
+        LEFT JOIN KC_STUDENT_COURSE SC ON SC.STUDENT_ID = S.ID AND SC.AUTO_ALLOT = '1'
+        LEFT JOIN KC_OPTIONAL_COURSE OC ON SC.OPTIONAL_COURSE_ID = OC.ID AND OC.XN = #{xn} AND OC.XQ = #{xq}
+        LEFT JOIN KC_BASE_COURSE BC ON OC.COURSE_ID = BC.ID AND BC.XXLB = '2'
+        LEFT JOIN ZXXX_XQ XQ ON S.XQID = XQ.ID
+        LEFT JOIN ZXXX_NJXX G ON S.JBID = G.ID
+        LEFT JOIN ZXXX_BJXX C ON S.BJID = C.ID
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM KC_STUDENT_COURSE WSC
+            LEFT JOIN KC_OPTIONAL_COURSE WOC ON WSC.OPTIONAL_COURSE_ID = WOC.ID
+            LEFT JOIN KC_BASE_COURSE WBC ON WOC.COURSE_ID = WBC.ID
+            WHERE WSC.STUDENT_ID = S.ID
+                AND DECODE(WSC.AUTO_ALLOT,NULL,'0',WSC.AUTO_ALLOT) &lt;&gt; '1'
+                AND WBC.XXLB = '2'
+                AND WOC.XN = #{xn}
+                AND WOC.XQ = #{xq})
+        AND G.SSNJ &gt;= 3
+        AND S.VALID = '1'
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(campusId)">
+            AND S.XQID = #{campusId}
+        </if>
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(gradeId)">
+            AND S.JBID = #{gradeId}
+        </if>
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(clazzId)">
+            AND S.BJID = #{clazzId}
+        </if>
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(studentName)">
+            AND S.XM LIKE '%'||#{studentName}||'%'
+        </if>
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(autoAllot)">
+            AND NVL(SC.AUTO_ALLOT,'0') = #{autoAllot}
+        </if>
+        ORDER BY S.XQID, G.SSNJ, TO_NUMBER(C.BJMC), S.XM, S.XB, OC.COURSE_ID NULLS LAST, OC.COURSE_TYPE
+    </select>
+
+    <select id="selectChooseAttendanceStudents" resultMap="StudentCourseResultMap">
+        SELECT
+            SC.CREATE_USER AS SC_CREATE_USER,
+            SC.UPDATE_USER AS SC_UPDATE_USER,
+            SC.CREATE_TIME AS SC_CREATE_TIME,
+            SC.UPDATE_TIME AS SC_UPDATE_TIME,
+            SC.OPTIONAL_COURSE_ID AS SC_OPTIONAL_COURSE_ID,
+            SC.STUDENT_ID AS SC_STUDENT_ID,
+            SC.COURSE_TYPE AS SC_COURSE_TYPE,
+            SC.TEACHER_ID AS SC_TEACHER_ID,
+            SC.STATUS AS SC_STATUS,
+            SC.AUDIT_REASON AS SC_AUDIT_REASON,
+            SC.AUDIT_TIME AS SC_AUDIT_TIME,
+            SC.AUTO_ALLOT AS SC_AUTO_ALLOT,
+            SC.GRADE_NAME AS SC_GRADE_NAME,
+            <include refid="StudentColumnList"/>,
+            ZN.JBMC AS S_GRADE_NAME, ZB.BJMC AS S_CLAZZ_NAME,
+            SA.DESCRIPTION AS SC_DESCRIPTION,
+            '' AS OC_SPACE_ID --解决optionalCourse关联查询问题
+        FROM <include refid="StudentCourseTableName"/>
+        LEFT JOIN ZXXS_JBXX S ON S.ID = SC.STUDENT_ID
+        LEFT JOIN ZXXX_NJXX ZN ON ZN.ID = S.JBID
+        LEFT JOIN ZXXX_BJXX ZB ON ZB.ID = S.BJID
+        INNER JOIN (SELECT * FROM KC_STUDENT_ATTENDANCE WHERE WORK_DAY_ID = #{workDayId}) SA ON SA.STUDENT_ID = SC.STUDENT_ID
+        WHERE SC.OPTIONAL_COURSE_ID = #{optionalCourseId}
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(studentName)">
+            AND S.XM LIKE '%'||#{studentName}||'%'
+        </if>
+        ORDER BY S.XM,S.ID
+        <!-- AND SC.STUDENT_ID IN (SELECT STUDENT_ID FROM KC_STUDENT_ATTENDANCE WHERE WORK_DAY_ID = #{workDayId}) -->
+    </select>
+
+    <select id="selectHistChooseCourse" resultMap="StudentCourseResultMap">
+        SELECT
+          <include refid="StudentCourseColumnList"/>,
+          <include refid="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseColumnList"/>
+        FROM <include refid="StudentCourseTableName"/>
+        LEFT JOIN (SELECT O.*,B.XXLB FROM KC_OPTIONAL_COURSE O LEFT JOIN KC_BASE_COURSE B ON B.ID = O.COURSE_ID) OC ON OC.ID = SC.OPTIONAL_COURSE_ID
+        LEFT JOIN ZXXS_JBXX S ON S.ID = SC.STUDENT_ID
+        WHERE OC.XXLB = 2 AND OC.COURSE_STATUS = 2 AND SC.STATUS = 1
+    </select>
+</mapper>

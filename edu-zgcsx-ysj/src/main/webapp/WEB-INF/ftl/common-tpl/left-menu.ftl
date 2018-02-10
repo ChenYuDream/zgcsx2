@@ -1,0 +1,1 @@
+<xmp :widget="{is:'ms-navMenu',dataList:@menuList,_path:@sysPath,menuPath:@menuPath}"/></xmp>

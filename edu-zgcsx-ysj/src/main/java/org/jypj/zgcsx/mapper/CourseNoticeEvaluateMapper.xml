@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.dao.CourseNoticeEvaluateDao">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="org.jypj.zgcsx.entity.CourseNoticeEvaluate">
+		<id column="ID" property="id" />
+		<result column="NOTICE_ID" property="noticeId" />
+		<result column="NOTICE_PERSON_ID" property="noticePersonId" />
+		<result column="EVALUATE" property="evaluate" />
+		<result column="CONTENT" property="content" />
+		<result column="CTIME" property="ctime" />
+		<result column="CREATEUSER" property="createuser" />
+		<result column="name" property="name" />
+		<result column="bm" property="bm" />
+	</resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        ID, NOTICE_ID, NOTICE_PERSON_ID, EVALUATE, CONTENT, CTIME, CREATEUSER
+    </sql>
+    <select id="selectListByPage" resultMap="BaseResultMap" parameterType="map">
+		select eva.*,teacher.xm as name,teacher.bm as bm from course_notice_evaluate eva
+		inner join zxjz_jbxx teacher on eva.notice_person_id=teacher.id
+		where 1=1 and teacher.valid='1'
+		<if test="name!=null and name !=''">
+			and teacher.xm like concat(concat('%',#{name}),'%')
+		</if>
+		<if test="noticeId!=null and noticeId !=''">
+			and  eva.NOTICE_ID = #{noticeId}
+		</if>
+		<if test="evaluate !=null and evaluate !=''">
+			and  eva.EVALUATE = #{evaluate}
+		</if>
+	</select>
+
+</mapper>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.TreeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="TreeResultMap" type="org.jypj.zgcsx.course.entity.Tree">
+        <id column="ET_ID" property="id"/>
+        <result column="ET_NAME" property="name"/>
+        <result column="ET_PARENT_ID" property="parentId"/>
+        <result column="ET_ORDER" property="orderNum"/>
+    </resultMap>
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="DetailTreeResultMap" extends="TreeResultMap" type="org.jypj.zgcsx.course.entity.Tree">
+        <collection property="parents" column="{id=ET_ID}" select="selectParentsById"/>
+    </resultMap>
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="TreeTeacherResultMap" type="org.jypj.zgcsx.course.entity.TreeTeacher">
+        <id column="PT_ID" property="id"/>
+        <result column="PT_TREE_ID" property="treeId"/>
+        <result column="PT_TEACHER_ID" property="teacherId"/>
+        <result column="PT_ALIAS_NAME" property="aliasName"/>
+        <association property="teacher" resultMap="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherResultMap"/>
+        <association property="tree" resultMap="DetailTreeResultMap"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="TreeColumnList">
+        ET.ID AS ET_ID,
+        ET.TEXT AS ET_NAME,
+        ET.PARENTID AS ET_PARENT_ID,
+        ET.ORDERNUM AS ET_ORDER_NUM
+    </sql>
+
+    <sql id="TreeTableName">
+        EIMS_TREE ET
+    </sql>
+
+    <!-- 通用查询结果列 -->
+    <sql id="TreeTeacherColumnList">
+        <!--PT.ID AS PT_ID,-->
+        PT.NODEID AS PT_TREE_ID,
+        PT.TEACHERID AS PT_TEACHER_ID,
+        PT.TEACHERBM AS PT_ALIAS_NAME
+    </sql>
+
+    <sql id="TreeTeacherTableName">
+        EIMS_PERSON_TREE PT
+    </sql>
+
+    <select id="selectAll" resultMap="TreeResultMap">
+        SELECT
+            <include refid="TreeColumnList"/>
+        FROM <include refid="TreeTableName"/>
+        START WITH ET.PARENTID='0' CONNECT BY ET.PARENTID=PRIOR ET.ID
+    </select>
+
+    <select id="selectParentsById" resultMap="TreeResultMap">
+        SELECT <include refid="TreeColumnList"/>,LEVEL
+        FROM <include refid="TreeTableName"/>
+        START WITH ET.ID=#{id} CONNECT BY PRIOR ET.PARENTID = ET.ID ORDER BY LEVEL DESC
+    </select>
+
+    <select id="selectAllTreeTeachers" parameterType="map" resultMap="TreeTeacherResultMap">
+        SELECT * FROM (
+            SELECT
+                <include refid="TreeTeacherColumnList"/>
+                ,<include refid="TreeColumnList"/>
+                ,<include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherColumnList"/>
+            FROM
+                <include refid="TreeTeacherTableName"/>
+            LEFT JOIN
+                <include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherTableName"/> ON PT.TEACHERID = T.ID
+            LEFT JOIN
+                <include refid="TreeTableName"/> ON PT.NODEID = ET.ID
+            UNION ALL
+            SELECT
+                <!--SYS_GUID() AS PT_ID,-->
+                'NON_TREE' AS PT_TREE_ID,
+                T.ID AS PT_TEACHER_ID,
+                T.BM AS PT_ALIAS_NAME,
+                'NON_TREE' AS ET_ID,
+                '非通讯录' AS ET_NAME,
+                (SELECT ID FROM EIMS_TREE WHERE PARENTID = '0') AS ET_PARENT_ID,
+                9998 AS ET_ORDER_NUM,
+                <include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherColumnList"/>
+            FROM <include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherTableName"/>
+            WHERE
+                NOT EXISTS (SELECT 1 FROM EIMS_PERSON_TREE PT WHERE PT.TEACHERID = T.ID)
+            UNION ALL
+            SELECT
+                <!--SYS_GUID() AS PT_ID,-->
+                'NON_SCHOOL' AS PT_TREE_ID,
+                T.ID AS PT_TEACHER_ID,
+                T.BM AS PT_ALIAS_NAME,
+                'NON_SCHOOL' AS ET_ID,
+                '外聘教师' AS ET_NAME,
+                (SELECT ID FROM EIMS_TREE WHERE PARENTID = '0') AS ET_PARENT_ID,
+                9999 AS ET_ORDER_NUM,
+                <include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherColumnList"/>
+            FROM <include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherTableName"/>
+            WHERE T.ISINNER = '0'
+        ) TT
+        <where>
+            TT.T_VALID = '1'
+            AND
+            <choose>
+                <when test="treeId == 'NON_TREE'">
+                    TT.ET_ID = #{treeId}
+                </when>
+                <when test="treeId == 'NON_SCHOOL'">
+                    TT.ET_ID = #{treeId}
+                </when>
+                <otherwise>
+                    CASE WHEN (SELECT ID FROM EIMS_TREE WHERE PARENTID = '0') = #{treeId} THEN 1
+                         <!--WHEN EXISTS (
+                             SELECT 1 FROM EIMS_PERSON_TREE PT
+                             WHERE PT.TEACHERID = TT.T_ID AND PT.NODEID IN (
+                                SELECT ID AS TREE_ID FROM EIMS_TREE ET START WITH ET.ID=#{treeId} CONNECT BY ET.PARENTID = PRIOR ET.ID
+                             )
+                         ) THEN 1-->
+                        WHEN TT.PT_TREE_ID IN (SELECT ID FROM EIMS_TREE ETT START WITH ETT.ID=#{treeId} CONNECT BY ETT.PARENTID = PRIOR ETT.ID) THEN 1
+                    ELSE 0 END = 1
+                </otherwise>
+            </choose>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(sex)">
+                AND TT.T_SEX = #{sex}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(name)">
+                AND TT.T_NAME LIKE '%'||#{name}||'%'
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(idCard)">
+                AND TT.T_ID_CARD LIKE '%'||#{idCard}||'%'
+            </if>
+        </where>
+        ORDER BY
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(currentId)">
+                DECODE(TT.T_ID,'${currentId}',0,1),
+            </if>
+            TT.T_NAME,TT.T_ID_CARD
+    </select>
+</mapper>

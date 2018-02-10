@@ -1,0 +1,2 @@
+<h1 class="title-pj text-center">三小云事件系统</h1>
+<xmp :widget="{is:'ms-toolNavigation',navList:@navList,userInfo:@userInfo,skinFn:@skinFn,isActive:@skinShow,sysNum:@sysNum,logoutPath:@logoutPath,commonUrl:@commonUrl,roleSize:@roleSize}"/></xmp>

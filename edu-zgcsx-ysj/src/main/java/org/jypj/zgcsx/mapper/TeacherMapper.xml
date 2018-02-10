@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">      
+<mapper namespace="org.jypj.zgcsx.dao.TeacherDao">
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="org.jypj.zgcsx.entity.Teacher">
+        <id column="ID" property="id" />
+        <result column="XM" property="teacherName" />
+        <result column="bm" property="bm" />
+        <result column="XBM" property="sex" />
+        <result column="mzm" property="mzm" />
+        <result column="SFZJH" property="idCard" />
+        <result column="LXDH" property="phoneNum" />
+        <result column="xxid" property="xxid" />
+        <result column="xqid" property="xqid" />
+        <result column="grade" property="grade" />
+        <result column="kcmc" property="kcmc" />
+    </resultMap>
+
+    <!--带年级查询所有教师-->
+    <select id="selectAllTeacher" resultMap="BaseResultMap" parameterType="map">
+        select * from ( select t.id, t.xm,t.bm,t.xbm,t.sfzjh,t.lxdh, t.xxid, t.xqid,t.mzm,
+        (select wm_concat(distinct nj.JBMC)
+        from teacher_course_class tcc
+        inner join zxxx_bjxx bj
+        on tcc.bjid = bj.id
+        inner join zxxx_njxx nj
+        on nj.id = bj.jbid
+        where tcc.jsid = t.id
+        and tcc.type = '0') as grade,
+        (select wm_concat (distinct kcxx.KCMC)
+        from kc_clazz_timetable timetable
+        inner join kcxx_kcdy kcxx
+        on timetable.course_id=kcxx.id
+        inner join zxjz_jbxx teacher
+        on teacher.id = timetable.teacher_id
+        where teacher.id=t.id) as kcmc
+        from zxjz_jbxx t where 1=1
+        and t.valid='1'
+        <if test="teacherName !=null and teacherName!=''">and t.XM LIKE CONCAT (CONCAT('%',#{teacherName}),'%')
+        </if>
+        <if test="sex !=null and sex!=''">
+            and t.XBM = #{sex}
+        </if>
+        <if test="mzm !=null and mzm!=''">
+            and t.mzm = #{mzm}
+        </if>
+        <if test="phoneNum !=null and phoneNum!=''">
+            and t.LXDH LIKE CONCAT(CONCAT('%',#{phoneNum}),'%')
+        </if>
+        <if test="bm !=null and bm!=''">
+            and t.bm  LIKE CONCAT(CONCAT('%',#{bm}),'%')
+        </if>
+          ) t
+        where 1=1
+        <if test="kcmc !=null and kcmc!=''">
+            and  t.kcmc  LIKE CONCAT(CONCAT('%',#{kcmc}),'%')
+        </if>
+    </select>
+
+    <select id="selectAllTeacherIds" resultMap="BaseResultMap">
+        select id from zxjz_jbxx where valid = '1'
+    </select>
+</mapper>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.BaseCourseMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseCourseResultMap" type="org.jypj.zgcsx.course.entity.BaseCourse">
+        <id column="BC_ID" property="id"/>
+        <result column="BC_CREATE_USER" property="createUser"/>
+        <result column="BC_UPDATE_USER" property="updateUser"/>
+        <result column="BC_CREATE_TIME" property="createTime"/>
+        <result column="BC_UPDATE_TIME" property="updateTime"/>
+        <result column="BC_COURSE_NAME" property="courseName"/>
+        <result column="BC_DESCRIPTION" property="description"/>
+        <result column="BC_KCDJ" property="kcdj"/>
+        <result column="BC_COURSE_DEFINITION" property="courseDefinition"/>
+        <result column="BC_COURSE_LEVEL" property="courseLevel"/>
+        <result column="BC_COURSE_CATEGORY" property="courseCategory"/>
+        <result column="BC_STUDY_TYPE" property="studyType"/>
+        <result column="BC_KCCC" property="kccc"/>
+        <result column="BC_KCLB" property="kclb"/>
+        <result column="BC_XXLB" property="xxlb"/>
+        <result column="BC_LIMIT_GRADE" property="limitGrade"/>
+
+        <result column="BC_OPTIONAL_COURSE_ID" property="optionalCourseId"/>
+        <result column="BC_OPTIONAL_ALIAS_NAME" property="aliasName"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="BaseCourseColumnList">
+        BC.ID AS BC_ID,
+        BC.CREATE_USER AS BC_CREATE_USER,
+        BC.UPDATE_USER AS BC_UPDATE_USER,
+        BC.CREATE_TIME AS BC_CREATE_TIME,
+        BC.UPDATE_TIME AS BC_UPDATE_TIME,
+        BC.COURSE_NAME AS BC_COURSE_NAME,
+        BC.DESCRIPTION AS BC_DESCRIPTION,
+        BC.KCDJ AS BC_KCDJ,
+        BC.KCCC AS BC_KCCC,
+        BC.KCLB AS BC_KCLB,
+        BC.XXLB AS BC_XXLB,
+        BC.LIMIT_GRADE AS BC_LIMIT_GRADE
+        ,(SELECT CD.ITEM_TEXT FROM EIMS_CODEMAP_DATA CD WHERE CD.ITEM_VALUE = BC.KCDJ AND CD.CODEID = (SELECT C.ID FROM EIMS_CODEMAP C WHERE C.CODE = 'cims_kcly_sc')) AS BC_COURSE_DEFINITION
+        ,(SELECT CD.ITEM_TEXT FROM EIMS_CODEMAP_DATA CD WHERE CD.ITEM_VALUE = BC.KCCC AND CD.CODEID = (SELECT C.ID FROM EIMS_CODEMAP C WHERE C.CODE = 'cims_kc_cc')) AS BC_COURSE_LEVEL
+        ,(SELECT CD.ITEM_TEXT FROM EIMS_CODEMAP_DATA CD WHERE CD.ITEM_VALUE = BC.KCLB AND CD.CODEID = (SELECT C.ID FROM EIMS_CODEMAP C WHERE C.CODE = 'cims_kcly_ll')) AS BC_COURSE_CATEGORY
+        ,(SELECT CD.ITEM_TEXT FROM EIMS_CODEMAP_DATA CD WHERE CD.ITEM_VALUE = BC.XXLB AND CD.CODEID = (SELECT C.ID FROM EIMS_CODEMAP C WHERE C.CODE = 'cims_kc_xxlb')) AS BC_STUDY_TYPE
+    </sql>
+
+    <sql id="BaseCourseTableName">
+        KC_BASE_COURSE BC
+    </sql>
+
+    <select id="selectTeacherBasicCourse" resultMap="BaseCourseResultMap">
+        SELECT
+        DISTINCT
+        <include refid="BaseCourseColumnList"/>
+        FROM KC_CLAZZ_TIMETABLE CT
+        LEFT JOIN
+        <include refid="BaseCourseTableName"/>
+        ON BC.ID = CT.COURSE_ID
+        LEFT JOIN KC_WORK_DAY WD ON WD.ID = CT.WORK_DAY_ID
+        WHERE WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq} AND WD.WEEK_OF_TERM IS NULL
+        AND CT.TEACHER_ID = #{baseCourse.teacherId}
+        AND BC.KCDJ = '01'
+    </select>
+
+    <select id="selectTeacherChooseCourse" resultMap="BaseCourseResultMap">
+        SELECT
+        DISTINCT<include refid="BaseCourseColumnList"/>,
+        OC.ID AS BC_OPTIONAL_COURSE_ID, OC.ALIAS_NAME BC_OPTIONAL_ALIAS_NAME
+        FROM KC_TEACHER_COURSE TC
+        LEFT JOIN KC_OPTIONAL_COURSE OC ON OC.ID=TC.OPTIONAL_COURSE_ID
+        LEFT JOIN <include refid="BaseCourseTableName"/>
+        ON BC.ID = OC.COURSE_ID
+        WHERE OC.XN = #{xnxq.xn} AND OC.XQ = #{xnxq.xq}
+        AND TC.TEACHER_ID = #{baseCourse.teacherId}
+        AND BC.KCDJ IN ('02','03')
+    </select>
+
+    <select id="selectAll" parameterType="map" resultMap="BaseCourseResultMap">
+        SELECT
+            <include refid="BaseCourseColumnList"/>
+        FROM <include refid="BaseCourseTableName"/>
+        <where>
+            BC.VALID = '1'
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xxlb)">
+                AND BC.XXLB = #{xxlb}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(courseName)">
+                AND BC.COURSE_NAME LIKE '%'||#{courseName}||'%'
+            </if>
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">      
+<mapper namespace="org.jypj.zgcsx.dao.StudentDao">
+
+
+    <select id="queryNoticeStudent" resultType="org.jypj.zgcsx.entity.Student" parameterType="string">
+        select stu.id,stu.xm from course_notice_person person inner join zxxs_jbxx stu on person.person_id=stu.id
+        where 1=1 and person.notice_id=#{noticeId}  and (person.OPER is null or person.OPER='1')
+    </select>
+</mapper>

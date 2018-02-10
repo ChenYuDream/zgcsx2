@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>中关村三小</title>
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        .wrong-bg {
+            background: #fff url("${ctx!}/static/image/wrong.png") center center no-repeat;
+            background-attachment: fixed;
+        }
+
+        .wrongbox {
+            margin-top: 400px;
+            text-align: center;
+        }
+
+        .wrong {
+            display: inline-block;
+            *display: inline;
+            *zoom: 1;
+            text-align: left;
+        }
+
+        .wrongbox .wrong .wrong-tit {
+            font-size: 31px;
+            color: #82c7e5;
+            line-height: 45px;
+            font-weight: 600;
+        }
+
+        .wrongbox .wrong a {
+            display: inline-block;
+            padding: 6px 15px;
+            color: #fff;
+            background-color: #4ab8f7;
+        }
+    </style>
+</head>
+<body class="wrong-bg">
+<div class="wrongbox">
+    <div class="wrong">
+        <p class="wrong-tit">抱歉，您无权访问当前系统${currentSystem?exists?string("【"+currentSystem.sysName+"】","")}</p>
+        <a href="${ctx!}/loginOut<#if systemNum??>?systemNum=${systemNum}</#if>">返回登录页</a>
+        <#list systemList as system>
+            <a href="${ctx!}/login?systemNum=${system.sysNum}">${system.sysName}</a>
+        </#list>
+    </div>
+</div>
+</body>
+</html>

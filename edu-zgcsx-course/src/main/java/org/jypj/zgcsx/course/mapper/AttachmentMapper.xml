@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.AttachmentMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="AttachmentResultMap" type="org.jypj.zgcsx.course.entity.Attachment">
+        <id column="A_ID" property="id"/>
+        <result column="A_CREATE_USER" property="createUser"/>
+        <result column="A_UPDATE_USER" property="updateUser"/>
+        <result column="A_CREATE_TIME" property="createTime"/>
+        <result column="A_UPDATE_TIME" property="updateTime"/>
+        <result column="A_USER_ID" property="userId"/>
+        <result column="A_UPLOAD_TIME" property="uploadTime"/>
+        <result column="A_FILE_NAME" property="fileName"/>
+        <result column="A_FILE_SIZE" property="fileSize"/>
+        <result column="A_DESCRIPTION" property="description"/>
+        <result column="A_FILE_TYPE" property="fileType"/>
+        <result column="A_FILE_PATH" property="filePath"/>
+        <result column="A_FILE_PATH_S" property="filePathS"/>
+
+        <!--非数据库字段-->
+        <result column="A_USER_NAME" property="userName"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="AttachmentColumnList">
+        A.ID AS A_ID,
+        A.CREATE_USER AS A_CREATE_USER,
+        A.UPDATE_USER AS A_UPDATE_USER,
+        A.CREATE_TIME AS A_CREATE_TIME,
+        A.UPDATE_TIME AS A_UPDATE_TIME,
+        A.USER_ID AS A_USER_ID,
+        A.UPLOAD_TIME AS A_UPLOAD_TIME,
+        A.FILE_NAME AS A_FILE_NAME,
+        A.FILE_SIZE AS A_FILE_SIZE,
+        A.DESCRIPTION AS A_DESCRIPTION,
+        A.FILE_TYPE AS A_FILE_TYPE,
+        A.FILE_PATH AS A_FILE_PATH,
+        A.FILE_PATH_S AS A_FILE_PATH_S
+    </sql>
+
+    <sql id="AttachmentTableName">
+        KC_ATTACHMENT A
+    </sql>
+
+</mapper>

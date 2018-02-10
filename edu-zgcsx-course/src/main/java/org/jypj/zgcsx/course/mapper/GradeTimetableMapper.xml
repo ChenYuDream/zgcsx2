@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.GradeTimetableMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="GradeTimetableResultMap" type="org.jypj.zgcsx.course.entity.GradeTimetable">
+        <id column="GT_ID" property="id"/>
+        <result column="GT_CREATE_USER" property="createUser"/>
+        <result column="GT_UPDATE_USER" property="updateUser"/>
+        <result column="GT_CREATE_TIME" property="createTime"/>
+        <result column="GT_UPDATE_TIME" property="updateTime"/>
+        <result column="GT_WORK_DAY_ID" property="workDayId"/>
+        <result column="GT_GRADE_ID" property="gradeId"/>
+    </resultMap>
+
+    <resultMap id="FullGradeTimetableResultMap" type="org.jypj.zgcsx.course.entity.GradeTimetable"
+               extends="GradeTimetableResultMap">
+        <!--日程列表-->
+        <association property="workDay" resultMap="org.jypj.zgcsx.course.dao.WorkDayMapper.WorkDayResultMap"/>
+        <!--班级列表-->
+        <collection property="clazzs" resultMap="org.jypj.zgcsx.course.dao.ClazzMapper.ClazzResultMap"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="GradeTimetableColumnList">
+        GT.ID AS GT_ID,
+        GT.CREATE_USER AS GT_CREATE_USER,
+        GT.UPDATE_USER AS GT_UPDATE_USER,
+        GT.CREATE_TIME AS GT_CREATE_TIME,
+        GT.UPDATE_TIME AS GT_UPDATE_TIME,
+        GT.WORK_DAY_ID AS GT_WORK_DAY_ID,
+        GT.GRADE_ID AS GT_GRADE_ID
+    </sql>
+
+    <sql id="GradeTimetableTableName">
+        KC_GRADE_TIMETABLE GT
+    </sql>
+
+    <!--班级信息-->
+    <sql id="ClazzColumnList">
+        C.ID AS C_ID,
+        C.BJMC AS C_NAME,
+        C.JBID AS C_GRADE_ID
+    </sql>
+
+    <!--班级信息-->
+    <sql id="GradeColumnList">
+        J.jbmc as gradeName
+    </sql>
+
+    <!--日程列-->
+    <sql id="WorkDayColumnList">
+        WD.ID AS WD_ID,
+        WD.CREATE_USER AS WD_CREATE_USER,
+        WD.UPDATE_USER AS WD_UPDATE_USER,
+        WD.CREATE_TIME AS WD_CREATE_TIME,
+        WD.UPDATE_TIME AS WD_UPDATE_TIME,
+        WD.XN AS WD_XN,
+        WD.XQ AS WD_XQ,
+        WD.WEEK_OF_TERM AS WD_WEEK_OF_TERM,
+        WD.DAY_OF_WEEK AS WD_DAY_OF_WEEK,
+        WD.PERIOD AS WD_PERIOD,
+        WD.START_TIME AS WD_START_TIME,
+        WD.END_TIME AS WD_END_TIME,
+        WD.CAMPUS_ID AS WD_CAMPUS_ID
+    </sql>
+    <delete id="deleteBeforeSelectivePlaceHolder">
+        delete from kc_grade_timetable where id in (select gt.id from kc_grade_timetable gt
+            left join kc_work_day wd on gt.work_day_id=wd.id
+            where wd.xn=#{xnxq.xn} and wd.xq=#{xnxq.xq}
+            and gt.grade_id=#{gradeId})
+    </delete>
+
+    <select id="selectChooseGradeTimetable" resultMap="FullGradeTimetableResultMap">
+        SELECT
+        <include refid="GradeTimetableColumnList"/>,
+        <include refid="ClazzColumnList"/>,
+        <include refid="WorkDayColumnList"/>
+        FROM
+        <include refid="GradeTimetableTableName"/>
+        LEFT JOIN KC_WORK_DAY WD ON WD.ID = GT.WORK_DAY_ID
+        LEFT JOIN ZXXX_BJXX C ON C.JBID = GT.GRADE_ID
+        WHERE C.XQID = #{campusId} AND C.VALID = 1 AND WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq}
+    </select>
+
+
+    <select id="selectChooseGradeTimetableSingleGrade" resultMap="FullGradeTimetableResultMap">
+        SELECT
+        <include refid="GradeTimetableColumnList"/>,
+        <include refid="GradeColumnList"/>,
+        <include refid="WorkDayColumnList"/>
+        FROM
+        <include refid="GradeTimetableTableName"/>
+        LEFT JOIN KC_WORK_DAY WD ON WD.ID = GT.WORK_DAY_ID
+        LEFT JOIN ZXXX_NJXX J ON J.ID = GT.GRADE_ID
+        WHERE J.XQID = #{campusId} AND J.VALID = '1' AND WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq}
+        and J.ID= #{gradeId}
+    </select>
+</mapper>

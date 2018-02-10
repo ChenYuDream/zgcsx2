@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.dao.CourseNoticePersonDao">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="org.jypj.zgcsx.entity.CourseNoticePerson">
+		<id column="ID" property="id" />
+		<result column="NOTICE_ID" property="noticeId" />
+		<result column="PERSON_ID" property="personId" />
+		<result column="NOTICE_PERSON_TYPE" property="noticePersonType" />
+		<result column="NOTICE_READ" property="noticeRead" />
+		<result column="CTIME" property="ctime" jdbcType="TIMESTAMP"/>
+		<result column="MTIME" property="mtime" jdbcType="TIMESTAMP"/>
+		<result column="OPER" property="oper" />
+		<result column="REASON" property="reason" />
+		<result column="name" property="name" />
+		<result column="bm" property="bm" />
+		<result column="type" property="type" />
+	</resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        ID, NOTICE_ID, PERSON_ID, NOTICE_PERSON_TYPE, NOTICE_READ, CTIME, MTIME, OPER, REASON
+    </sql>
+    <select id="selectAllPerson" resultMap="BaseResultMap" parameterType="string">
+		SELECT <include refid="Base_Column_List"/>
+			FROM course_notice_person WHERE (NOTICE_ID = #{noticeID} and
+			( OPER is null or OPER ='1' ) )
+	</select>
+
+    <select id="selectListByPage" resultMap="BaseResultMap" parameterType="map">
+		select t.* from
+		(
+		select person.*,teacher.xm as name,teacher.bm as bm,decode(person.OPER,null,'0',person.OPER) as type from course_notice_person person
+		inner join zxjz_jbxx teacher on person.person_id = teacher.id where teacher.valid ='1'
+		union all
+		select person.*,student.xm as name,'' as bm,decode(person.OPER,null,'0',person.OPER) as type from course_notice_person person
+		inner join zxxs_jbxx student on person.person_id = student.id where student.valid ='1'
+		) t
+		where 1=1
+		<if test="noticeId != null and noticeId != ''">
+			and t.NOTICE_ID = #{noticeId}
+		</if>
+		<if test="type != null and type != ''">
+			and t.type = #{type}
+		</if>
+		<if test="name != null and name != ''">
+			and t.name like concat(concat('%',#{name}),'%')
+		</if>
+		<if test="creater != null and creater != ''">
+			and t.PERSON_ID !=#{creater}
+		</if>
+	</select>
+
+</mapper>

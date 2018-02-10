@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.EvaluateElementValueMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="EvaluateElementValueResultMap" type="org.jypj.zgcsx.course.entity.EvaluateElementValue">
+        <id column="EEV_ID" property="id"/>
+        <result column="EEV_CREATE_USER" property="createUser"/>
+        <result column="EEV_UPDATE_USER" property="updateUser"/>
+        <result column="EEV_CREATE_TIME" property="createTime"/>
+        <result column="EEV_UPDATE_TIME" property="updateTime"/>
+        <result column="EEV_ELEMENT_ID" property="elementId"/>
+        <result column="EEV_EVALUATE_LEVEL" property="evaluateLevel"/>
+        <result column="EEV_CONTENT" property="content"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="EvaluateElementValueColumnList">
+        EEV.ID AS EEV_ID,
+        EEV.CREATE_USER AS EEV_CREATE_USER,
+        EEV.UPDATE_USER AS EEV_UPDATE_USER,
+        EEV.CREATE_TIME AS EEV_CREATE_TIME,
+        EEV.UPDATE_TIME AS EEV_UPDATE_TIME,
+        EEV.ELEMENT_ID AS EEV_ELEMENT_ID,
+        EEV.EVALUATE_LEVEL AS EEV_EVALUATE_LEVEL,
+        EEV.CONTENT AS EEV_CONTENT
+    </sql>
+
+    <sql id="EvaluateElementValueTableName">
+        KC_EVALUATE_ELEMENT_VALUE EEV
+    </sql>
+
+    <delete id="deleteByOptionalCourseId" parameterType="string">
+        DELETE FROM KC_EVALUATE_ELEMENT_VALUE T
+        WHERE T.ELEMENT_ID IN (
+            SELECT T1.ID FROM KC_EVALUATE_ELEMENT T1 WHERE T1.ID = T.ELEMENT_ID AND T1.OPTIONAL_COURSE_ID = #{id}
+        )
+    </delete>
+
+    <select id="selectValuesByElementId" resultMap="EvaluateElementValueResultMap">
+        SELECT <include refid="EvaluateElementValueColumnList"/>
+        FROM <include refid="EvaluateElementValueTableName"/>
+        WHERE EEV.ELEMENT_ID = #{id}
+    </select>
+</mapper>

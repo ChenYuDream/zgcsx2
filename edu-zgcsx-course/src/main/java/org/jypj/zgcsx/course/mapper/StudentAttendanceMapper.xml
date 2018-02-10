@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.StudentAttendanceMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="StudentAttendanceResultMap" type="org.jypj.zgcsx.course.entity.StudentAttendance">
+        <id column="SA_ID" property="id"/>
+        <result column="SA_CREATE_USER" property="createUser"/>
+        <result column="SA_UPDATE_USER" property="updateUser"/>
+        <result column="SA_CREATE_TIME" property="createTime"/>
+        <result column="SA_UPDATE_TIME" property="updateTime"/>
+        <result column="SA_STUDENT_ID" property="studentId"/>
+        <result column="SA_WORK_DAY_ID" property="workDayId"/>
+        <result column="SA_DESCRIPTION" property="description"/>
+        <result column="SA_DESCRIPTION" property="description"/>
+
+        <result column="SA_COURSE_TYPE" property="courseType"/>
+        <result column="SA_ATTENDANCE_COUNT" property="attendanceCount"/>
+
+        <!--日程详情-->
+        <association property="workDay" resultMap="org.jypj.zgcsx.course.dao.WorkDayMapper.WorkDayResultMap"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="StudentAttendanceColumnList">
+        SA.ID AS SA_ID,
+        SA.CREATE_USER AS SA_CREATE_USER,
+        SA.UPDATE_USER AS SA_UPDATE_USER,
+        SA.CREATE_TIME AS SA_CREATE_TIME,
+        SA.UPDATE_TIME AS SA_UPDATE_TIME,
+        SA.STUDENT_ID AS SA_STUDENT_ID,
+        SA.WORK_DAY_ID AS SA_WORK_DAY_ID,
+        SA.COURSE_TYPE AS SA_COURSE_TYPE,
+    </sql>
+
+    <sql id="WorkDayColumnList">
+        WD.ID AS WD_ID,
+        WD.CREATE_USER AS WD_CREATE_USER,
+        WD.UPDATE_USER AS WD_UPDATE_USER,
+        WD.CREATE_TIME AS WD_CREATE_TIME,
+        WD.UPDATE_TIME AS WD_UPDATE_TIME,
+        WD.XN AS WD_XN,
+        WD.XQ AS WD_XQ,
+        WD.WEEK_OF_TERM AS WD_WEEK_OF_TERM,
+        WD.DAY_OF_WEEK AS WD_DAY_OF_WEEK,
+        WD.PERIOD AS WD_PERIOD,
+        WD.START_TIME AS WD_START_TIME,
+        WD.END_TIME AS WD_END_TIME
+    </sql>
+
+    <sql id="StudentAttendanceTableName">
+        KC_STUDENT_ATTENDANCE SA
+    </sql>
+
+    <select id="selectBasicStudentAttendance" resultMap="StudentAttendanceResultMap">
+        SELECT WDS.* FROM (
+            SELECT
+              WD.NOT_WEEK_ID,WD.ID AS WD_ID, WD.WEEK_OF_TERM AS WD_WEEK_OF_TERM, WD.DAY_OF_WEEK AS WD_DAY_OF_WEEK, WD.PERIOD AS WD_PERIOD,
+              COUNT(WORK_DAY_ID) AS SA_ATTENDANCE_COUNT
+            FROM
+            (
+                SELECT
+                  (SELECT ID FROM KC_WORK_DAY WHERE XN = #{xnxq.xn} AND XQ = #{xnxq.xq} AND WEEK_OF_TERM IS NULL AND DAY_OF_WEEK = WD1.DAY_OF_WEEK AND PERIOD = WD1.PERIOD AND CAMPUS_ID = WD1.CAMPUS_ID ) AS NOT_WEEK_ID,
+                  WD1.ID, WD1.WEEK_OF_TERM, WD1.DAY_OF_WEEK, WD1.PERIOD FROM KC_WORK_DAY WD1
+                LEFT JOIN KC_WORK_DAY WD2 ON WD2.CAMPUS_ID = WD1.CAMPUS_ID AND WD2.XN = WD1.XN AND WD2.XQ = WD1.XQ AND WD1.PERIOD IS NOT NULL
+                WHERE WD2.ID = #{studentAttendance.workDayId} AND NOT ( WD1.WEEK_OF_TERM = #{studentAttendance.weekOfTerm} AND WD1.DAY_OF_WEEK = #{studentAttendance.dayOfWeek}  AND WD1.PERIOD = #{studentAttendance.period})
+                UNION ALL
+                SELECT
+                    (
+                      SELECT ID FROM KC_WORK_DAY WHERE XN = #{xnxq.xn} AND XQ = #{xnxq.xq} AND WEEK_OF_TERM IS NULL AND DAY_OF_WEEK = #{studentAttendance.dayOfWeek} AND PERIOD = #{studentAttendance.period} AND CAMPUS_ID = #{studentAttendance.campusId}
+                    ) AS NOT_WEEK_ID,
+                    (
+                      SELECT ID FROM KC_WORK_DAY WHERE XN = #{xnxq.xn} AND XQ = #{xnxq.xq} AND WEEK_OF_TERM = #{studentAttendance.weekOfTerm} AND DAY_OF_WEEK = #{studentAttendance.dayOfWeek} AND PERIOD = #{studentAttendance.period} AND CAMPUS_ID = #{studentAttendance.campusId}
+                    ) AS ID,
+                    #{studentAttendance.weekOfTerm} AS WEEK_OF_TERM,
+                    #{studentAttendance.dayOfWeek} AS DAY_OF_WEEK,
+                    #{studentAttendance.period} AS PERIOD
+                FROM DUAL
+            ) WD
+            LEFT JOIN (SELECT S.* FROM KC_STUDENT_ATTENDANCE S INNER JOIN ZXXS_JBXX ZJ ON ZJ.ID = S.STUDENT_ID AND ZJ.BJID = #{studentAttendance.clazzid}  AND S.COURSE_TYPE = 1) SA ON SA.WORK_DAY_ID = WD.ID
+            LEFT JOIN ZXXS_JBXX ZJ ON ZJ.ID = SA.STUDENT_ID
+            WHERE 1=1
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(studentAttendance.clazzid)">
+                AND ZJ.BJID = #{studentAttendance.clazzid}
+            </if>
+            OR (
+                WD.WEEK_OF_TERM = #{studentAttendance.weekOfTerm} AND WD.DAY_OF_WEEK = #{studentAttendance.dayOfWeek} AND WD.PERIOD = #{studentAttendance.period}
+            )
+            GROUP BY WD.NOT_WEEK_ID,WD.ID,WD.WEEK_OF_TERM,WD.DAY_OF_WEEK,WD.PERIOD,SA.WORK_DAY_ID
+        ) WDS
+        LEFT JOIN KC_CLAZZ_TIMETABLE CT ON CT.WORK_DAY_ID = WDS.NOT_WEEK_ID AND CT.CLAZZ_ID = #{studentAttendance.clazzid} AND CT.TEACHER_ID = #{studentAttendance.teacherId}
+        WHERE CT.CLAZZ_ID = #{studentAttendance.clazzid} AND CT.COURSE_ID = #{studentAttendance.courseId} OR WDS.WD_ID IS NULL
+        ORDER BY WDS.WD_WEEK_OF_TERM DESC, WDS.WD_DAY_OF_WEEK DESC, WDS.WD_PERIOD DESC, WDS.WD_ID
+    </select>
+
+    <select id="selectChooseStudentAttendance" resultMap="StudentAttendanceResultMap">
+        SELECT <include refid="WorkDayColumnList"/>,
+        NVL(ST.ABSENCE_COUNT, 0) AS SA_ATTENDANCE_COUNT
+        FROM KC_OPTIONAL_TIMETABLE OT
+        LEFT JOIN KC_WORK_DAY WD ON OT.WORK_DAY_ID = WD.ID
+        LEFT JOIN (
+        SELECT SC.OPTIONAL_COURSE_ID,OT.WORK_DAY_ID,SUM(DECODE(SA.ID,NULL,0,1)) AS ABSENCE_COUNT
+        FROM KC_STUDENT_COURSE SC
+        LEFT JOIN KC_OPTIONAL_TIMETABLE OT ON SC.OPTIONAL_COURSE_ID = OT.OPTIONAL_COURSE_ID
+        LEFT JOIN <include refid="StudentAttendanceTableName"/> ON SC.STUDENT_ID = SA.STUDENT_ID AND OT.WORK_DAY_ID = SA.WORK_DAY_ID
+        GROUP BY SC.OPTIONAL_COURSE_ID,OT.WORK_DAY_ID
+        ) ST ON OT.OPTIONAL_COURSE_ID = ST.OPTIONAL_COURSE_ID AND OT.WORK_DAY_ID = ST.WORK_DAY_ID
+        WHERE OT.OPTIONAL_COURSE_ID = #{studentAttendance.optionalCourseId}
+        AND (
+        ST.ABSENCE_COUNT &lt;&gt; 0
+        OR (WD.XN = #{xnxq.xn}  AND WD.XQ = #{xnxq.xq}
+        AND WD.WEEK_OF_TERM  &lt;= #{studentAttendance.weekOfTerm}
+        <!-- AND WD.DAY_OF_WEEK = #{studentAttendance.dayOfWeek} AND WD.PERIOD = #{studentAttendance.period}-->
+        )
+        )
+        ORDER BY WD.WEEK_OF_TERM,WD.DAY_OF_WEEK,WD.PERIOD,WD.ID
+    </select>
+</mapper>

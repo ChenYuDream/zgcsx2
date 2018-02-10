@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.SchoolXqMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="CampusResultMap" type="org.jypj.zgcsx.course.entity.SchoolXq">
+        <id column="XQ_ID" property="id"/>
+        <result column="XQ_NAME" property="name"/>
+        <result column="XQ_XXID" property="schoolId"/>
+        <collection column="{id=XQ_ID}" property="gradeList" select="selectGradesByCampusId"/>
+    </resultMap>
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="GradeResultMap" type="org.jypj.zgcsx.course.entity.Grade">
+        <id column="G_ID" property="id"/>
+        <result column="G_NAME" property="name"/>
+        <result column="G_CAMPUS_ID" property="campusId"/>
+        <result column="G_GRADE_NUM" property="gradeNum"/>
+        <collection column="{id=G_ID}" property="clazzList" select="org.jypj.zgcsx.course.dao.ClazzMapper.selectClazzesByGradeId"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="CampusColumnList">
+        XQ.ID AS XQ_ID,
+        XQ.XQMC AS XQ_NAME,
+        XQ.XXID AS XQ_XXID
+    </sql>
+
+    <sql id="CampusTableName">
+        ZXXX_XQ XQ
+    </sql>
+
+    <!-- 通用查询结果列 -->
+    <sql id="GradeColumnList">
+        G.ID AS G_ID,
+        G.JBMC AS G_NAME,
+        G.XQID AS G_CAMPUS_ID,
+        G.SSNJ AS G_GRADE_NUM
+    </sql>
+
+    <sql id="GradeTableName">
+        ZXXX_NJXX G
+    </sql>
+    
+    <select id="selectAllCampuses" resultMap="CampusResultMap">
+        SELECT <include refid="CampusColumnList"/>
+        FROM <include refid="CampusTableName"/>
+    </select>
+    
+    <select id="selectGradesByCampusId" resultMap="GradeResultMap">
+        SELECT <include refid="GradeColumnList"/>
+        FROM <include refid="GradeTableName"/>
+        WHERE G.XQID = #{id} AND G.VALID = '1'
+        ORDER BY G.SSNJ
+    </select>
+
+
+    <select id="selectCampusesById" resultMap="CampusResultMap">
+        SELECT <include refid="CampusColumnList"/>
+        FROM <include refid="CampusTableName"/>
+        WHERE XQ.ID = #{id} AND XQ.VALID = '1'
+    </select>
+
+</mapper>

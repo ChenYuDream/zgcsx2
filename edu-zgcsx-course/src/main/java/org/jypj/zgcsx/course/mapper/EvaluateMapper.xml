@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.EvaluateMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="EvaluateResultMap" type="org.jypj.zgcsx.course.entity.Evaluate">
+        <id column="E_ID" property="id"/>
+        <result column="E_COURSE_RESOURCE_ID" property="courseResourceId"/>
+        <result column="E_STUDENT_ID" property="studentId"/>
+        <result column="E_TEACHER_ID" property="teacherId"/>
+        <result column="E_STATE" property="state"/>
+        <result column="E_EVALUATE_TIME" property="evaluateTime"/>
+        <result column="E_CREATE_USER" property="createUser"/>
+        <result column="E_UPDATE_USER" property="updateUser"/>
+        <result column="E_CREATE_TIME" property="createTime"/>
+        <result column="E_UPDATE_TIME" property="updateTime"/>
+
+        <result column="E_STATE_NAME" property="stateName"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="EvaluateColumnList">
+        E.ID AS E_ID,
+        E.COURSE_RESOURCE_ID AS E_COURSE_RESOURCE_ID,
+        E.STUDENT_ID AS E_STUDENT_ID,
+        E.TEACHER_ID AS E_TEACHER_ID,
+        E.STATE AS E_STATE,
+        E.EVALUATE_TIME AS E_EVALUATE_TIME,
+        E.CREATE_USER AS E_CREATE_USER,
+        E.UPDATE_USER AS E_UPDATE_USER,
+        E.CREATE_TIME AS E_CREATE_TIME,
+        E.UPDATE_TIME AS E_UPDATE_TIME
+    </sql>
+
+    <sql id="EvaluateTableName">
+        KC_EVALUATE E
+    </sql>
+
+</mapper>

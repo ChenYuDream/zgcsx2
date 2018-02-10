@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.WorkDayMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="WorkDayResultMap" type="org.jypj.zgcsx.course.entity.WorkDay">
+        <id column="WD_ID" property="id"/>
+        <result column="WD_CREATE_USER" property="createUser"/>
+        <result column="WD_UPDATE_USER" property="updateUser"/>
+        <result column="WD_CREATE_TIME" property="createTime"/>
+        <result column="WD_UPDATE_TIME" property="updateTime"/>
+        <result column="WD_CAMPUS_ID" property="campusId"/>
+        <result column="WD_XN" property="xn"/>
+        <result column="WD_XQ" property="xq"/>
+        <result column="WD_WEEK_OF_TERM" property="weekOfTerm"/>
+        <result column="WD_DAY_OF_WEEK" property="dayOfWeek"/>
+        <result column="WD_PERIOD" property="period"/>
+        <result column="WD_START_TIME" property="startTime"/>
+        <result column="WD_END_TIME" property="endTime"/>
+        <association property="xnxq" resultMap="org.jypj.zgcsx.course.dao.XnxqMapper.XnxqResultMap"/>
+    </resultMap>
+    
+    <resultMap id="TeacherTimetableResult" type="org.jypj.zgcsx.course.vo.TeacherTimetableVo">
+        <association property="teacher" resultMap="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherResultMap"/>
+        <association property="workDay" resultMap="WorkDayResultMap"/>
+        <association property="baseCourse" resultMap="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseResultMap"/>
+        <association property="optionalCourse" resultMap="org.jypj.zgcsx.course.dao.OptionalCourseMapper.DetailOptionalCourseResultMap"/>
+    </resultMap>
+
+    <resultMap id="SpaceTimetableResult" type="org.jypj.zgcsx.course.vo.SpaceTimetableVo">
+        <id property="workDayId" column="WD_ID"/>
+        <association property="workDay" resultMap="WorkDayResultMap"/>
+        <association property="space" resultMap="org.jypj.zgcsx.course.dao.SpaceMapper.SpaceResultMap"/>
+        <collection property="optionalCourses" resultMap="org.jypj.zgcsx.course.dao.OptionalCourseMapper.DetailOptionalCourseResultMap"/>
+    </resultMap>
+
+    <resultMap id="ClazzTimetableResult" type="org.jypj.zgcsx.course.vo.ClazzTimetableVo">
+        <id column="CT_ID" property="id"/>
+        <result column="CT_COURSE_ID" property="courseId"/>
+        <association property="clazz" resultMap="org.jypj.zgcsx.course.dao.ClazzMapper.ClazzResultMap"/>
+        <association property="workDay" resultMap="WorkDayResultMap"/>
+        <association property="baseCourse" resultMap="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseResultMap"/>
+        <collection property="teachers" resultMap="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherResultMap"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="WorkDayColumnList">
+        WD.ID AS WD_ID,
+        WD.CREATE_USER AS WD_CREATE_USER,
+        WD.UPDATE_USER AS WD_UPDATE_USER,
+        WD.CREATE_TIME AS WD_CREATE_TIME,
+        WD.UPDATE_TIME AS WD_UPDATE_TIME,
+        WD.XN AS WD_XN,
+        WD.XQ AS WD_XQ,
+        WD.WEEK_OF_TERM AS WD_WEEK_OF_TERM,
+        WD.DAY_OF_WEEK AS WD_DAY_OF_WEEK,
+        WD.PERIOD AS WD_PERIOD,
+        WD.START_TIME AS WD_START_TIME,
+        WD.END_TIME AS WD_END_TIME,
+        WD.CAMPUS_ID AS WD_CAMPUS_ID
+    </sql>
+
+    <sql id="ClazzTimetableColumnList">
+        CT.CLAZZ_ID||CT.WORK_DAY_ID AS CT_ID
+        ,CT.COURSE_ID AS CT_COURSE_ID
+        ,<include refid="WorkDayColumnList"/>
+        ,<include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherColumnList"/>
+        ,<include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseColumnList"/>
+        ,<include refid="org.jypj.zgcsx.course.dao.ClazzMapper.ClazzColumnList"/>
+    </sql>
+
+    <sql id="ClazzTimetableTableName">
+        (SELECT CLAZZ_ID,WORK_DAY_ID,TEACHER_ID,COURSE_ID FROM kc_clazz_timetable
+        UNION ALL
+        SELECT T1.ID AS CLAZZ_ID,T2.WORK_DAY_ID,'','' FROM ZXXX_BJXX T1,KC_GRADE_TIMETABLE T2 WHERE T1.JBID = T2.GRADE_ID) CT
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseTableName"/> ON CT.COURSE_ID = BC.ID
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherTableName"/> ON CT.TEACHER_ID = T.ID
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.ClazzMapper.ClazzTableName"/> ON CT.CLAZZ_ID = C.ID
+        LEFT JOIN <include refid="WorkDayTableName"/> ON CT.WORK_DAY_ID = WD.ID
+    </sql>
+
+    <select id="selectAllClazzTimetable" resultMap="ClazzTimetableResult" parameterType="map">
+        SELECT <include refid="ClazzTimetableColumnList"/>
+        FROM <include refid="ClazzTimetableTableName"/>
+        WHERE WD.XN = #{xn,jdbcType=INTEGER} AND WD.XQ = #{xq,jdbcType=INTEGER} AND CT.CLAZZ_ID = #{clazzId}
+    </select>
+
+    <sql id="TeacherTimetableColumnList">
+        <include refid="WorkDayColumnList"/>
+        ,<include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherColumnList"/>
+        ,<include refid="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseColumnList"/>
+        ,<include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseColumnList"/>
+    </sql>
+
+    <sql id="SpaceTimetableColumnList">
+        <include refid="WorkDayColumnList"/>
+        ,<include refid="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseColumnList"/>
+        ,BC.COURSE_NAME AS OC_COURSE_NAME
+        ,<include refid="org.jypj.zgcsx.course.dao.SpaceMapper.SpaceColumnList"/>
+    </sql>
+
+    <sql id="SpaceTimetableTableName">
+        KC_OPTIONAL_TIMETABLE OT
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseTableName"/> ON OT.OPTIONAL_COURSE_ID = OC.ID
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseTableName"/> ON OC.COURSE_ID = BC.ID
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.SpaceMapper.SpaceTableName"/> ON OC.SPACE_ID = SM.ID
+        LEFT JOIN <include refid="WorkDayTableName"/> ON OT.WORK_DAY_ID = WD.ID
+    </sql>
+
+    <sql id="WorkDayTableName">
+        KC_WORK_DAY WD
+    </sql>
+
+    <select id="selectTeacherTimetablesByTeacher" resultMap="TeacherTimetableResult">
+        SELECT
+            <include refid="TeacherTimetableColumnList"/>
+        FROM
+        (
+            SELECT DISTINCT TEACHER_ID,WORK_DAY_ID,COURSE_ID,NULL AS OPTIONAL_COURSE_ID
+            FROM KC_CLAZZ_TIMETABLE CT
+            UNION ALL
+            SELECT DISTINCT TC.TEACHER_ID,OT.WORK_DAY_ID,OC.COURSE_ID,OC.ID AS OPTIONAL_COURSE_ID
+            FROM KC_TEACHER_COURSE TC
+            LEFT JOIN KC_OPTIONAL_COURSE OC ON TC.OPTIONAL_COURSE_ID = OC.ID
+            LEFT JOIN KC_OPTIONAL_TIMETABLE OT ON TC.OPTIONAL_COURSE_ID=OT.OPTIONAL_COURSE_ID
+        ) TT
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.TeacherMapper.TeacherTableName"/> ON TT.TEACHER_ID = T.ID
+        LEFT JOIN <include refid="WorkDayTableName"/> ON TT.WORK_DAY_ID = WD.ID
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseTableName"/> ON TT.COURSE_ID = BC.ID
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseTableName"/> ON TT.OPTIONAL_COURSE_ID = OC.ID
+        <where>
+            TT.TEACHER_ID IN 
+            <foreach collection="teacherIds" item="teacherId" open="(" close=")" separator=",">
+                #{teacherId}
+            </foreach>
+            AND WD.XN=#{xnxq.xn} AND WD.XQ = #{xnxq.xq}
+        </where>
+        ORDER BY WD.XN,WD.XQ,WD.WEEK_OF_TERM,WD.DAY_OF_WEEK,WD.PERIOD,WD.START_TIME,WD.END_TIME
+    </select>
+
+    <select id="selectSpaceTimetablesBySpaceId" resultMap="SpaceTimetableResult">
+        SELECT
+            <include refid="SpaceTimetableColumnList"/>
+        FROM <include refid="SpaceTimetableTableName"/>
+        WHERE OC.SPACE_ID = #{id} AND WD.XN=#{xnxq.xn} AND WD.XQ = #{xnxq.xq}
+        ORDER BY WD.XN,WD.XQ,WD.WEEK_OF_TERM,WD.DAY_OF_WEEK,WD.PERIOD,WD.START_TIME,WD.END_TIME
+    </select>
+
+    <select id="selectDetailByNonIdAndWeekOfTerm" resultMap="WorkDayResultMap">
+        SELECT
+          <include refid="WorkDayColumnList"/>
+        FROM
+          <include refid="WorkDayTableName"/>
+        LEFT JOIN KC_WORK_DAY WDN
+            ON WD.XN = WDN.XN
+                AND WD.XQ = WDN.XQ
+                AND WD.DAY_OF_WEEK = WDN.DAY_OF_WEEK
+                AND WD.PERIOD = WDN.PERIOD
+                AND WD.CAMPUS_ID = WDN.CAMPUS_ID
+                AND WDN.WEEK_OF_TERM IS NULL AND WD.WEEK_OF_TERM IS NOT NULL
+        WHERE WDN.ID = #{workDayId} AND WD.WEEK_OF_TERM = #{weekOfTerm}
+    </select>
+
+    <!-- 通用查询结果列 -->
+    <sql id="XnxqColumnList">
+        XNXQ.ID AS XNXQ_ID,
+        XNXQ.XN AS XNXQ_XN,
+        XNXQ.XQ AS XNXQ_XQ,
+        XNXQ.XQKSSJ AS XNXQ_XQKSSJ,
+        XNXQ.XQJSSJ AS XNXQ_XQJSSJ,
+        XNXQ.KCJSSJ AS XNXQ_KCJSSJ
+    </sql>
+
+    <select id="selectWorkDaysByOptionalCourseId" resultMap="WorkDayResultMap">
+        SELECT
+            <include refid="WorkDayColumnList"/>,
+            <include refid="XnxqColumnList"/>
+        FROM KC_OPTIONAL_TIMETABLE OT
+        LEFT JOIN <include refid="WorkDayTableName"/> ON OT.WORK_DAY_ID = WD.ID
+        LEFT JOIN ZXXX_XNXQ XNXQ ON WD.XN = XNXQ.XN AND WD.XQ = XNXQ.XQ
+        <where>
+            OT.OPTIONAL_COURSE_ID = #{id}
+        </where>
+        ORDER BY WD.XN,WD.XQ,WD.WEEK_OF_TERM,WD.DAY_OF_WEEK,WD.PERIOD,WD.START_TIME,WD.END_TIME
+    </select>
+
+    <select id="selectDetailByWorkDay" parameterType="workDay" resultMap="WorkDayResultMap">
+        SELECT
+            <include refid="WorkDayColumnList"/>
+        FROM
+            <include refid="WorkDayTableName"/>
+        <where>
+            WD.WEEK_OF_TERM IS NOT NULL
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xn)">
+                AND WD.XN = #{xn}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(xq)">
+                AND WD.XQ = #{xq}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(campusId)">
+                AND WD.CAMPUS_ID = #{campusId}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insertWorkDay" parameterType="workDay">
+        INSERT INTO KC_WORK_DAY(
+            ID,
+            CREATE_USER,
+            UPDATE_USER,
+            CREATE_TIME,
+            UPDATE_TIME,
+            XN,
+            XQ,
+            WEEK_OF_TERM,
+            DAY_OF_WEEK,
+            PERIOD,
+            START_TIME,
+            END_TIME,
+            CAMPUS_ID
+        )
+        SELECT
+            #{id},
+            #{createUser},
+            #{updateUser},
+            #{createTime},
+            #{updateTime},
+            #{xn},
+            #{xq},
+            #{weekOfTerm},
+            #{dayOfWeek},
+            #{period},
+            NVL(#{startTime},TO_DATE(T.KSSJ,'HH24:MI')),
+            NVL(#{endTime},TO_DATE(T.JSSJ,'HH24:MI')),
+            #{campusId}
+        FROM KCXX_KC_SJHS T
+        WHERE T.XQID = #{campusId} AND t.KCZC = #{dayOfWeek} AND T.KCJC = #{period}
+    </insert>
+
+    <insert id="insertAfter" parameterType="workDay">
+        INSERT INTO KC_WORK_DAY(
+            ID,
+            CREATE_USER,
+            CREATE_TIME,
+            XN,
+            XQ,
+            WEEK_OF_TERM,
+            DAY_OF_WEEK,
+            PERIOD,
+            START_TIME,
+            END_TIME,
+            CAMPUS_ID
+        )
+        SELECT
+            #{id},
+            #{createUser},
+            #{createTime},
+            #{xn},
+            #{xq},
+            #{weekOfTerm},
+            #{dayOfWeek},
+            #{period},
+            #{startTime},
+            #{endTime},
+            #{campusId}
+        FROM DUAL
+        WHERE NOT EXISTS(
+            SELECT 1
+            FROM KC_WORK_DAY
+            WHERE CAMPUS_ID = #{campusId}
+            AND XN = #{xn}
+            AND XQ = #{xq}
+            AND WEEK_OF_TERM = #{weekOfTerm}
+            AND DAY_OF_WEEK = #{dayOfWeek}
+            AND TO_CHAR(START_TIME,'HH24:MI') = TO_CHAR(#{startTime},'HH24:MI')
+            AND TO_CHAR(END_TIME,'HH24:MI') = TO_CHAR(#{endTime},'HH24:MI')
+        )
+    </insert>
+
+    <insert id="insertOptional" parameterType="workDay">
+        INSERT INTO KC_WORK_DAY(
+            ID,
+            CREATE_USER,
+            CREATE_TIME,
+            XN,
+            XQ,
+            WEEK_OF_TERM,
+            DAY_OF_WEEK,
+            PERIOD,
+            START_TIME,
+            END_TIME,
+            CAMPUS_ID
+        )
+        SELECT
+            #{id},
+            #{createUser},
+            #{createTime},
+            #{xn},
+            #{xq},
+            #{weekOfTerm},
+            #{dayOfWeek},
+            #{period},
+            #{startTime},
+            #{endTime},
+            #{campusId}
+        FROM DUAL
+        WHERE NOT EXISTS(
+            SELECT 1
+            FROM KC_WORK_DAY
+            WHERE CAMPUS_ID = #{campusId}
+            AND XN = #{xn}
+            AND XQ = #{xq}
+            AND WEEK_OF_TERM = #{weekOfTerm}
+            AND DAY_OF_WEEK = #{dayOfWeek}
+            AND PERIOD = #{period}
+        )
+    </insert>
+
+    <select id="selectAfter" parameterType="workDay" resultMap="WorkDayResultMap">
+        SELECT <include refid="WorkDayColumnList"/>
+        FROM <include refid="WorkDayTableName"/>
+        <where>
+            WD.CAMPUS_ID = #{campusId}
+            AND WD.XN = #{xn}
+            AND WD.XQ = #{xq}
+            AND WD.WEEK_OF_TERM = #{weekOfTerm}
+            AND WD.DAY_OF_WEEK = #{dayOfWeek}
+            AND TO_CHAR(START_TIME,'HH24:MI') = TO_CHAR(#{startTime},'HH24:MI')
+            AND TO_CHAR(END_TIME,'HH24:MI') = TO_CHAR(#{endTime},'HH24:MI')
+        </where>
+    </select>
+
+    <select id="selectOptional" parameterType="workDay" resultMap="WorkDayResultMap">
+        SELECT <include refid="WorkDayColumnList"/>
+        FROM <include refid="WorkDayTableName"/>
+        <where>
+            WD.CAMPUS_ID = #{campusId}
+            AND WD.XN = #{xn}
+            AND WD.XQ = #{xq}
+            AND WD.WEEK_OF_TERM = #{weekOfTerm}
+            AND WD.DAY_OF_WEEK = #{dayOfWeek}
+            AND WD.PERIOD = #{period}
+        </where>
+    </select>
+
+    <select id="selectBySpaceId" resultMap="WorkDayResultMap">
+        SELECT
+            <include refid="WorkDayColumnList"/>
+            ,<include refid="org.jypj.zgcsx.course.dao.OptionalTimetableMapper.OptionalTimetableColumnList"/>
+            ,<include refid="org.jypj.zgcsx.course.dao.OptionalCourseMapper.OptionalCourseColumnList"/>
+            ,<include refid="org.jypj.zgcsx.course.dao.SpaceMapper.SpaceColumnList"/>
+        FROM KC_OPTIONAL_TIMETABLE OT
+        LEFT JOIN KC_WORK_DAY WD ON OT.WORK_DAY_ID = WD.ID
+        LEFT JOIN KC_OPTIONAL_COURSE OC ON OT.OPTIONAL_COURSE_ID = OC.ID
+        LEFT JOIN SPACE_MANAGE SM ON OC.SPACE_ID = SM.ID
+        <where>
+            SM.FLAG = '1'
+            AND OC.XN = #{xnxq.xn}
+            AND OC.XQ = #{xnxq.xq}
+            AND OC.SPACE_ID = #{spaceId}
+        </where>
+    </select>
+
+
+    <select id="selectCount" resultType="java.lang.Integer">
+        SELECT COUNT(0) FROM KC_TEACHER_COURSE TC
+        LEFT JOIN KC_OPTIONAL_TIMETABLE OT ON OT.OPTIONAL_COURSE_ID = TC.OPTIONAL_COURSE_ID
+        LEFT JOIN KC_OPTIONAL_COURSE OC ON OC.ID = TC.OPTIONAL_COURSE_ID
+        LEFT JOIN KC_WORK_DAY WD ON WD.ID = OT.WORK_DAY_ID
+        WHERE OC.COURSE_STATUS = 2 AND TC.TEACHER_ID = #{teacherId} AND WD.DAY_OF_WEEK = #{dayOfWeek}
+        AND
+        (
+            (
+            TO_DATE(TO_CHAR(WD.START_TIME, 'HH24:MI'), 'HH24:MI') &gt;= TO_DATE(TO_CHAR(#{startTime}, 'HH24:MI'), 'HH24:MI') AND
+            TO_DATE(TO_CHAR(WD.START_TIME, 'HH24:MI'), 'HH24:MI') &lt;= TO_DATE(TO_CHAR(#{endTime}, 'HH24:MI'), 'HH24:MI')
+            )
+            OR
+            (
+            TO_DATE(TO_CHAR(WD.end_TIME, 'HH24:MI'), 'HH24:MI') &gt;= TO_DATE(TO_CHAR(#{startTime}, 'HH24:MI'), 'HH24:MI') AND
+            TO_DATE(TO_CHAR(WD.end_TIME, 'HH24:MI'), 'HH24:MI') &lt;= TO_DATE(TO_CHAR(#{endTime}, 'HH24:MI'), 'HH24:MI')
+            )
+        )
+    </select>
+
+    <select id="selectNotWeekById" resultMap="WorkDayResultMap">
+        SELECT <include refid="WorkDayColumnList"/> FROM KC_WORK_DAY WD2
+        LEFT JOIN KC_WORK_DAY WD ON WD2.XN = WD.XN AND WD2.XQ = WD.XQ AND WD2.CAMPUS_ID = WD.CAMPUS_ID AND WD2.DAY_OF_WEEK = WD.DAY_OF_WEEK AND WD2.PERIOD = WD.PERIOD
+        WHERE WD2.ID = #{id} AND WD.WEEK_OF_TERM IS NULL
+    </select>
+</mapper>

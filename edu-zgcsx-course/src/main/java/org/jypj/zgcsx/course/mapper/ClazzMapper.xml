@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.ClazzMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="ClazzResultMap" type="org.jypj.zgcsx.course.entity.Clazz">
+        <id column="C_ID" property="id"/>
+        <result column="C_SCHOOL_ID" property="schoolId"/>
+        <result column="C_SCHOOL_NAME" property="schoolName"/>
+        <result column="C_CAMPUS_ID" property="campusId"/>
+        <result column="C_CAMPUS_NAME" property="campusName"/>
+        <result column="C_GRADE_ID" property="gradeId"/>
+        <result column="C_GRADE_NAME" property="gradeName"/>
+        <result column="C_NAME" property="name"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="ClazzColumnList">
+        C.ID AS C_ID,
+        C.BJMC AS C_NAME,
+        C.JBID AS C_GRADE_ID
+    </sql>
+
+    <sql id="ClazzTableName">
+        ZXXX_BJXX C
+    </sql>
+    
+    <select id="selectClazzesByOptionalCourseId" resultMap="ClazzResultMap">
+        SELECT
+            <include refid="ClazzColumnList"/>
+            ,XQ.XXID AS C_SCHOOL_ID
+            ,S.XXMC AS C_SCHOOL_NAME
+            ,G.XQID AS C_CAMPUS_ID
+            ,XQ.XQMC AS C_CAMPUS_NAME
+            ,G.JBMC AS C_GRADE_NAME
+        FROM
+            KC_COURSE_CLAZZ CC
+        LEFT JOIN <include refid="ClazzTableName"/> ON CC.CLAZZ_ID = C.ID
+        LEFT JOIN ZXXX_NJXX G ON C.JBID = G.ID
+        LEFT JOIN ZXXX_XQ XQ ON G.XQID = XQ.ID
+        LEFT JOIN ZXXX_JBXX S ON XQ.XXID = S.ID
+        <where>
+            CC.OPTIONAL_COURSE_ID = #{id} AND C.VALID = '1'
+        </where>
+        ORDER BY XQ.ID,G.SSNJ,TO_NUMBER(C.BJMC)
+    </select>
+
+    <select id="selectClazzesByGradeId" resultMap="ClazzResultMap">
+        SELECT
+            <include refid="ClazzColumnList"/>
+            ,XQ.XXID AS C_SCHOOL_ID
+            ,S.XXMC AS C_SCHOOL_NAME
+            ,G.XQID AS C_CAMPUS_ID
+            ,XQ.XQMC AS C_CAMPUS_NAME
+            ,G.JBMC AS C_GRADE_NAME
+        FROM <include refid="ClazzTableName"/>
+        LEFT JOIN ZXXX_NJXX G ON C.JBID = G.ID
+        LEFT JOIN ZXXX_XQ XQ ON G.XQID = XQ.ID
+        LEFT JOIN ZXXX_JBXX S ON XQ.XXID = S.ID
+        <where>
+            C.JBID = #{id} AND C.VALID = '1'
+        </where>
+        ORDER BY TO_NUMBER(C.BJMC)
+    </select>
+
+    <select id="selectClazzByClazzId" resultMap="ClazzResultMap">
+        SELECT
+        <include refid="ClazzColumnList"/>
+        ,XQ.XXID AS C_SCHOOL_ID
+        ,S.XXMC AS C_SCHOOL_NAME
+        ,G.XQID AS C_CAMPUS_ID
+        ,XQ.XQMC AS C_CAMPUS_NAME
+        ,G.JBMC AS C_GRADE_NAME
+        FROM <include refid="ClazzTableName"/>
+        LEFT JOIN ZXXX_NJXX G ON C.JBID = G.ID
+        LEFT JOIN ZXXX_XQ XQ ON G.XQID = XQ.ID
+        LEFT JOIN ZXXX_JBXX S ON XQ.XXID = S.ID
+        <where>
+            C.ID = #{id} AND C.VALID = '1'
+        </where>
+        ORDER BY TO_NUMBER(G.SSNJ), TO_NUMBER(C.BJMC)
+    </select>
+
+</mapper>

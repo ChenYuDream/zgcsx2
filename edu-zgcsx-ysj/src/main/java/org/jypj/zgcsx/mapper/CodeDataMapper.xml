@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.dao.CodeDataDao">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="org.jypj.zgcsx.entity.CodeData">
+		<result column="CODE" property="code"></result>
+		<result column="NAME" property="name"></result>
+		<collection property="codeDataChildren" ofType="org.jypj.zgcsx.entity.CodeDataChild" >
+			<result column="ITEM_VALUE" property="value"></result>
+			<result column="ITEM_TEXT" property="text"></result>
+		</collection>
+	</resultMap>
+
+	<select id="selectAll" resultMap="BaseResultMap">
+		select codemap.code,codemap.name,codedata.item_value,codedata.item_text
+		from eims_codemap codemap
+		inner join eims_codemap_data codedata
+   		on codemap.id=codedata.codeid
+	</select>
+
+
+</mapper>

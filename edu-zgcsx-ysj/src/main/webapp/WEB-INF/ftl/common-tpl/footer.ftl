@@ -1,0 +1,1 @@
+<footer class="text-center footer-info">&copy;2009-2017<b>&nbsp;版权所有</b>：北京市海淀区中关村第三小学&nbsp;&nbsp;&nbsp;&nbsp;<b>学校网址</b>：<a href="http://www.zgc3x.com/">http://www.zgc3x.com/</a></footer>

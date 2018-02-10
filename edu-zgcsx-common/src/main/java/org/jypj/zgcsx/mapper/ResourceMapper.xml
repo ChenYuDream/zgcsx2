@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jypj.zgcsx.dao.ResourceDao" >
+
+    <resultMap id="BaseResultMap" type="org.jypj.zgcsx.entity.Resource" >
+        <id column="ID" property="id" jdbcType="VARCHAR" />
+        <result column="PARENT" property="parent" jdbcType="VARCHAR" />
+        <result column="NAME" property="name" jdbcType="VARCHAR" />
+        <result column="CODE" property="code" jdbcType="VARCHAR" />
+        <result column="URL" property="url" jdbcType="VARCHAR" />
+        <result column="IMAGE_URL" property="imageUrl" jdbcType="VARCHAR" />
+        <result column="TYPE" property="type" jdbcType="VARCHAR" />
+        <result column="PLATTYPE" property="plattype" jdbcType="VARCHAR" />
+        <result column="ACTIVE" property="active" jdbcType="VARCHAR" />
+        <result column="SORTORDER" property="sortorder" jdbcType="DECIMAL" />
+        <result column="DESCR" property="descr" jdbcType="VARCHAR" />
+        <result column="CREATE_USER" property="createUser" jdbcType="VARCHAR" />
+        <result column="CREATE_TIME" property="createTime" jdbcType="DATE" />
+        <result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR" />
+        <result column="MODIFY_TIME" property="modifyTime" jdbcType="DATE" />
+        <result column="SYSTEMID" property="systemid" jdbcType="VARCHAR" />
+        <result column="SHORTCUT_URL" property="shortcutUrl" jdbcType="VARCHAR" />
+        <result column="LEAF" property="leaf" jdbcType="VARCHAR" />
+        <result column="GRADE" property="grade" jdbcType="DECIMAL" />
+        <result column="SYSTEM_IP" property="systemIp" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <select id="selectByRoleId" resultMap="BaseResultMap" parameterType="string">
+        select * from Eims_Resource_t r inner join eims_role_resource_t rr
+            on r.id=rr.resource_id
+            where rr.role_id = #{roleId}
+            and r.active='1'
+            order by r.grade asc, r.id
+    </select>
+
+
+</mapper>

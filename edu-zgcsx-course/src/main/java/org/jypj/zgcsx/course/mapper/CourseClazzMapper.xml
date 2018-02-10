@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.CourseClazzMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="CourseClazzResultMap" type="org.jypj.zgcsx.course.entity.CourseClazz">
+        <id column="CC_ID" property="id"/>
+        <result column="CC_CREATE_USER" property="createUser"/>
+        <result column="CC_UPDATE_USER" property="updateUser"/>
+        <result column="CC_CREATE_TIME" property="createTime"/>
+        <result column="CC_UPDATE_TIME" property="updateTime"/>
+        <result column="CC_CLAZZ_ID" property="clazzId"/>
+        <result column="CC_OPTIONAL_COURSE_ID" property="optionalCourseId"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="CourseClazzColumnList">
+        CC.ID AS CC_ID,
+        CC.CREATE_USER AS CC_CREATE_USER,
+        CC.UPDATE_USER AS CC_UPDATE_USER,
+        CC.CREATE_TIME AS CC_CREATE_TIME,
+        CC.UPDATE_TIME AS CC_UPDATE_TIME,
+        CC.CLAZZ_ID AS CC_CLAZZ_ID,
+        CC.OPTIONAL_COURSE_ID AS CC_OPTIONAL_COURSE_ID
+    </sql>
+
+    <sql id="CourseClazzTableName">
+        KC_COURSE_CLAZZ CC
+    </sql>
+
+</mapper>

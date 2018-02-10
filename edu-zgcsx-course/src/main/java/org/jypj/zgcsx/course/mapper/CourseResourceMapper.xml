@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.CourseResourceMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="CourseResourceResultMap" type="org.jypj.zgcsx.course.entity.CourseResource">
+        <id column="CR_ID" property="id"/>
+        <result column="CR_CREATE_USER" property="createUser"/>
+        <result column="CR_UPDATE_USER" property="updateUser"/>
+        <result column="CR_CREATE_TIME" property="createTime"/>
+        <result column="CR_UPDATE_TIME" property="updateTime"/>
+        <result column="CR_COURSE_ID" property="courseId"/>
+        <result column="CR_OPTIONAL_COURSE_ID" property="optionalCourseId"/>
+        <result column="CR_CLAZZ_ID" property="clazzId"/>
+        <result column="CR_GRADE_ID" property="gradeId"/>
+        <result column="CR_COURSE_TYPE" property="courseType"/>
+        <result column="CR_UPLOAD_FILE_TYPE" property="uploadFileType"/>
+        <result column="CR_UPLOAD_TYPE" property="uploadType"/>
+        <result column="CR_CREATE_TYPE" property="createType"/>
+        <result column="CR_ATTACHMENT_ID" property="attachmentId"/>
+        <result column="CR_USER_ID" property="userId"/>
+        <result column="CR_XN" property="xn"/>
+        <result column="CR_XQ" property="xq"/>
+
+        <!-- 非数据映射字段 -->
+        <result column="CR_UPLOAD_FILE_NAME" property="uploadFileName"/>
+        <result column="CR_COURSE_NAME" property="courseName"/>
+        <result column="CR_ALIAS_NAME" property="aliasName"/>
+        <result column="CR_CAMPUS_NAME" property="campusName"/>
+        <result column="CR_GRADE_NAME" property="gradeName"/>
+        <result column="CR_CLAZZ_NAME" property="clazzName"/>
+
+        <!--资源详情-->
+        <association property="attachment" resultMap="org.jypj.zgcsx.course.dao.AttachmentMapper.AttachmentResultMap"/>
+        <association property="evaluate" resultMap="org.jypj.zgcsx.course.dao.EvaluateMapper.EvaluateResultMap"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="CourseResourceColumnList">
+        CR.ID AS CR_ID,
+        CR.CREATE_USER AS CR_CREATE_USER,
+        CR.UPDATE_USER AS CR_UPDATE_USER,
+        CR.CREATE_TIME AS CR_CREATE_TIME,
+        CR.UPDATE_TIME AS CR_UPDATE_TIME,
+        CR.COURSE_ID AS CR_COURSE_ID,
+        CR.OPTIONAL_COURSE_ID AS CR_OPTIONAL_COURSE_ID,
+        CR.CLAZZ_ID AS CR_CLAZZ_ID,
+        CR.GRADE_ID AS CR_GRADE_ID,
+        CR.COURSE_TYPE AS CR_COURSE_TYPE,
+        CR.UPLOAD_FILE_TYPE AS CR_UPLOAD_FILE_TYPE,
+        CR.UPLOAD_TYPE AS CR_UPLOAD_TYPE,
+        CR.CREATE_TYPE AS CR_CREATE_TYPE,
+        CR.ATTACHMENT_ID AS CR_ATTACHMENT_ID,
+        CR.USER_ID AS CR_USER_ID,
+        CR.XN AS CR_XN,
+        CR.XQ AS CR_XQ
+    </sql>
+
+    <sql id="CourseResourceTableName">
+       KC_COURSE_RESOURCE CR
+    </sql>
+
+    <select id="selectResource" resultMap="CourseResourceResultMap">
+        SELECT
+        <include refid="CourseResourceColumnList"/>,
+        <include refid="org.jypj.zgcsx.course.dao.AttachmentMapper.AttachmentColumnList"/>, EU.USERNAME AS A_USER_NAME,
+        MD.ITEM_TEXT AS CR_UPLOAD_FILE_NAME, BC.COURSE_NAME AS CR_COURSE_NAME, OC.ALIAS_NAME AS CR_ALIAS_NAME,
+        ZX.XQMC AS CR_CAMPUS_NAME, ZN.JBMC AS CR_GRADE_NAME, ZB.BJMC AS CR_CLAZZ_NAME,
+        E.ID AS E_ID,
+        E.COURSE_RESOURCE_ID AS E_COURSE_RESOURCE_ID,
+        E.STUDENT_ID AS E_STUDENT_ID,
+        E.TEACHER_ID AS E_TEACHER_ID,
+        E.STATE AS E_STATE,
+        E.EVALUATE_TIME AS E_EVALUATE_TIME
+        FROM <include refid="CourseResourceTableName"/>
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.AttachmentMapper.AttachmentTableName"/> ON CR.ATTACHMENT_ID=A.ID
+        LEFT JOIN (SELECT J.ITEM_VALUE,J.ITEM_TEXT FROM EIMS_CODEMAP K LEFT JOIN EIMS_CODEMAP_DATA J ON K.ID = J.CODEID WHERE K.CODE = 'sys_fileType') MD ON CR.UPLOAD_FILE_TYPE = MD.ITEM_VALUE
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseTableName"/> ON CR.COURSE_ID = BC.ID
+        LEFT JOIN KC_OPTIONAL_COURSE OC ON CR.OPTIONAL_COURSE_ID = OC.ID
+        LEFT JOIN EIMS_USER EU ON EU.USERID = CR.USER_ID
+        LEFT JOIN ZXXX_BJXX ZB ON ZB.ID = CR.CLAZZ_ID
+        LEFT JOIN ZXXX_NJXX ZN ON ZN.ID = CR.GRADE_ID
+        LEFT JOIN ZXXX_XQ ZX ON ZX.ID = ZB.XQID
+        LEFT JOIN KC_EVALUATE E ON E.COURSE_RESOURCE_ID = CR.ID
+        WHERE CR.XN = #{xnxq.xn} AND CR.XQ = #{xnxq.xq}
+        <choose>
+            <when test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(courseResource.clazzId)  and @org.jypj.zgcsx.common.utils.Ognl@isEmpty(courseResource.gradeId)">
+                AND CR.CLAZZ_ID = #{courseResource.clazzId,jdbcType=VARCHAR}
+            </when>
+            <when test="@org.jypj.zgcsx.common.utils.Ognl@isEmpty(courseResource.clazzId)  and @org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(courseResource.gradeId)">
+                AND CR.GRADE_ID = #{courseResource.gradeId,jdbcType=VARCHAR}
+            </when>
+            <when test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(courseResource.clazzId)  and @org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(courseResource.gradeId)">
+                AND CR.CLAZZ_ID = #{courseResource.clazzId,jdbcType=VARCHAR} AND CR.GRADE_ID = #{courseResource.gradeId,jdbcType=VARCHAR}
+            </when>
+        </choose>
+        <if test="courseResource.uploadFileType != null and courseResource.uploadFileType != ''">
+            AND CR.UPLOAD_FILE_TYPE = #{courseResource.uploadFileType,jdbcType=VARCHAR}
+        </if>
+        <if test="courseResource.userId != null and courseResource.userId != ''">
+            AND CR.USER_ID = #{courseResource.userId,jdbcType=VARCHAR}
+        </if>
+        <if test="courseResource.uploadType != null and courseResource.uploadType != ''">
+            AND CR.UPLOAD_TYPE = #{courseResource.uploadType,jdbcType=VARCHAR}
+        </if>
+        <if test="courseResource.createType != null and courseResource.createType != ''">
+            AND CR.CREATE_TYPE = #{courseResource.createType,jdbcType=VARCHAR}
+        </if>
+        <if test="courseResource.courseId != null and courseResource.courseId != ''">
+            AND CR.COURSE_ID = #{courseResource.courseId,jdbcType=VARCHAR}
+        </if>
+        <if test="courseResource.optionalCourseId != null and courseResource.optionalCourseId != ''">
+            AND CR.OPTIONAL_COURSE_ID = #{courseResource.optionalCourseId,jdbcType=VARCHAR}
+        </if>
+        <if test="courseResource.studentName != null and courseResource.studentName != ''">
+            AND EU.USERNAME LIKE '%'||#{courseResource.studentName,jdbcType=VARCHAR}||'%'
+        </if>
+        ORDER BY A.UPLOAD_TIME DESC, A.ID
+    </select>
+</mapper>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.CampusTimetableMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="CampusTimetableResultMap" type="org.jypj.zgcsx.course.entity.CampusTimetable">
+        <id column="CPT_ID" property="id"/>
+        <result column="CPT_CAMPUS_ID" property="campusId"/>
+        <result column="CPT_DAY_OF_WEEK" property="dayOfWeek"/>
+        <result column="CPT_PERIOD" property="period"/>
+        <result column="CPT_START_TIME" property="startTime"/>
+        <result column="CPT_END_TIME" property="endTime"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="CampusTimetableColumnList">
+        CPT.ID AS CPT_ID,
+        CPT.XQID AS CPT_CAMPUS_ID,
+        CPT.KCZC AS CPT_DAY_OF_WEEK,
+        CPT.KCJC AS CPT_PERIOD,
+        TO_DATE(CPT.KSSJ,'HH24:MI') AS CPT_START_TIME,
+        TO_DATE(CPT.JSSJ,'HH24:MI') AS CPT_END_TIME
+    </sql>
+
+    <sql id="CampusTimetableTableName">
+        KCXX_KC_SJHS CPT
+    </sql>
+    
+    <select id="selectByCampusId" resultMap="CampusTimetableResultMap">
+        SELECT
+            <include refid="CampusTimetableColumnList"/>
+        FROM
+            <include refid="CampusTimetableTableName"/>
+        <where>
+            CPT.XQID = #{campusId}
+        </where>
+    </select>
+
+</mapper>

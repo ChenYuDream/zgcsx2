@@ -1,0 +1,30 @@
+logging:
+  level:
+    root: error
+#    org.apache.ibatis.io: debug
+#    org.springframework.aop.aspectj.annotation: error
+#    org.springframework.aop.framework: error
+#    org.springframework.boot.autoconfigure: error
+#    org.springframework.boot.context.config: error
+#    org.springframework.boot.web.filter: error
+#    org.springframework.beans.factory.support: error
+#    org.springframework.beans.factory.annotation: error
+#    org.springframework.core.env: error
+#    org.springframework.core.io.support: error
+#    org.springframework.context.annotation: error
+#    org.springframework.jndi: error
+#    org.springframework.scheduling.annotation: error
+#    org.springframework.web.context.support: error
+#    org.springframework.web.servlet: error
+#    org.springframework.data.redis: error
+#    org.springframework.security.web.util.matcher: error
+#    freemarker.cache: error
+#    com.baomidou.mybatisplus: debug
+#    org.springframework.security.web: error
+#    org.springframework.security.cas.web: error
+#    mapper: debug
+    org.jypj.zgcsx.course.config.security: debug
+    org.jypj.zgcsx.course.config.session: debug
+    org.jypj.zgcsx.course: debug
+    org.springframework.security: debug
+debug: true

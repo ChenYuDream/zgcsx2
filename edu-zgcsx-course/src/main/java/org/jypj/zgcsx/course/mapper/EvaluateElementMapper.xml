@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.EvaluateElementMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="EvaluateElementResultMap" type="org.jypj.zgcsx.course.entity.EvaluateElement">
+        <id column="EE_ID" property="id"/>
+        <result column="EE_CREATE_USER" property="createUser"/>
+        <result column="EE_UPDATE_USER" property="updateUser"/>
+        <result column="EE_CREATE_TIME" property="createTime"/>
+        <result column="EE_UPDATE_TIME" property="updateTime"/>
+        <result column="EE_ELEMENT" property="element"/>
+        <result column="EE_OPTIONAL_COURSE_ID" property="optionalCourseId"/>
+        <result column="EE_SORT_ORDER" property="sortOrder"/>
+        <result column="EE_TYPE" property="type"/>
+    </resultMap>
+    
+    <resultMap id="FullEvaluateElementResultMap" type="org.jypj.zgcsx.course.entity.EvaluateElement" extends="EvaluateElementResultMap">
+        <collection column="{id=EE_ID}" property="evaluateElementValues" select="org.jypj.zgcsx.course.dao.EvaluateElementValueMapper.selectValuesByElementId"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="EvaluateElementColumnList">
+        EE.ID AS EE_ID,
+        EE.CREATE_USER AS EE_CREATE_USER,
+        EE.UPDATE_USER AS EE_UPDATE_USER,
+        EE.CREATE_TIME AS EE_CREATE_TIME,
+        EE.UPDATE_TIME AS EE_UPDATE_TIME,
+        EE.ELEMENT AS EE_ELEMENT,
+        EE.OPTIONAL_COURSE_ID AS EE_OPTIONAL_COURSE_ID,
+        EE.SORT_ORDER AS EE_SORT_ORDER,
+        EE.TYPE AS EE_TYPE
+    </sql>
+
+    <sql id="EvaluateElementTableName">
+        KC_EVALUATE_ELEMENT EE
+    </sql>
+
+    <delete id="deleteByOptionalCourseId" parameterType="string">
+        DELETE FROM KC_EVALUATE_ELEMENT
+        WHERE OPTIONAL_COURSE_ID = #{id}
+    </delete>
+
+    <select id="selectEvaluateElementsByOptionalCourseId" resultMap="FullEvaluateElementResultMap">
+        SELECT <include refid="EvaluateElementColumnList"/>
+        FROM <include refid="EvaluateElementTableName"/>
+        WHERE EE.OPTIONAL_COURSE_ID = #{id}
+    </select>
+</mapper>

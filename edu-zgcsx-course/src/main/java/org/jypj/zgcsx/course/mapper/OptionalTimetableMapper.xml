@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.OptionalTimetableMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="OptionalTimetableResultMap" type="org.jypj.zgcsx.course.entity.OptionalTimetable">
+        <id column="OT_ID" property="id"/>
+        <result column="OT_CREATE_USER" property="createUser"/>
+        <result column="OT_UPDATE_USER" property="updateUser"/>
+        <result column="OT_CREATE_TIME" property="createTime"/>
+        <result column="OT_UPDATE_TIME" property="updateTime"/>
+        <result column="OT_OPTIONAL_COURSE_ID" property="optionalCourseId"/>
+        <result column="OT_WORK_DAY_ID" property="workDayId"/>
+        <!--日程详情-->
+        <association property="workDay" resultMap="org.jypj.zgcsx.course.dao.WorkDayMapper.WorkDayResultMap"/>
+        <!--学生选课详情-->
+        <collection  property="studentCourses" resultMap="org.jypj.zgcsx.course.dao.StudentCourseMapper.BaseResultMap"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="OptionalTimetableColumnList">
+        OT.ID AS OT_ID,
+        OT.CREATE_USER AS OT_CREATE_USER,
+        OT.UPDATE_USER AS OT_UPDATE_USER,
+        OT.CREATE_TIME AS OT_CREATE_TIME,
+        OT.UPDATE_TIME AS OT_UPDATE_TIME,
+        OT.OPTIONAL_COURSE_ID AS OT_OPTIONAL_COURSE_ID,
+        OT.WORK_DAY_ID AS OT_WORK_DAY_ID,
+        <include refid="org.jypj.zgcsx.course.dao.WorkDayMapper.WorkDayColumnList"/>
+    </sql>
+
+    <sql id="OptionalTimetableTableName">
+        KC_OPTIONAL_TIMETABLE OT
+        LEFT JOIN <include refid="org.jypj.zgcsx.course.dao.WorkDayMapper.WorkDayTableName"/>
+    </sql>
+
+    <!--学生选课列-->
+    <sql id="StudentCourseColumnList">
+        SC.ID AS SC_ID,
+        SC.CREATE_USER AS SC_CREATE_USER,
+        SC.UPDATE_USER AS SC_UPDATE_USER,
+        SC.CREATE_TIME AS SC_CREATE_TIME,
+        SC.UPDATE_TIME AS SC_UPDATE_TIME,
+        SC.OPTIONAL_COURSE_ID AS SC_OPTIONAL_COURSE_ID,
+        SC.STUDENT_ID AS SC_STUDENT_ID,
+        SC.COURSE_TYPE AS SC_COURSE_TYPE,
+        SC.TEACHER_ID AS SC_TEACHER_ID,
+        SC.STATUS AS SC_STATUS,
+        SC.AUDIT_REASON AS SC_AUDIT_REASON,
+        SC.AUDIT_TIME AS SC_AUDIT_TIME,
+        SC.AUTO_ALLOT AS SC_AUTO_ALLOT,
+        SC.GRADE_NAME AS SC_GRADE_NAME
+    </sql>
+
+    <select id="selectAfterCourse" resultMap="OptionalTimetableResultMap">
+        SELECT
+            OT.ID AS OT_ID,
+            OT.CREATE_USER AS OT_CREATE_USER,
+            OT.UPDATE_USER AS OT_UPDATE_USER,
+            OT.CREATE_TIME AS OT_CREATE_TIME,
+            OT.UPDATE_TIME AS OT_UPDATE_TIME,
+            OT.OPTIONAL_COURSE_ID AS OT_OPTIONAL_COURSE_ID,
+            OT.WORK_DAY_ID AS OT_WORK_DAY_ID,
+            WD.ID AS WD_ID,
+            WD.CREATE_USER AS WD_CREATE_USER,
+            WD.UPDATE_USER AS WD_UPDATE_USER,
+            WD.CREATE_TIME AS WD_CREATE_TIME,
+            WD.UPDATE_TIME AS WD_UPDATE_TIME,
+            WD.XN AS WD_XN,
+            WD.XQ AS WD_XQ,
+            WD.WEEK_OF_TERM AS WD_WEEK_OF_TERM,
+            WD.DAY_OF_WEEK AS WD_DAY_OF_WEEK,
+            WD.PERIOD AS WD_PERIOD,
+            WD.START_TIME AS WD_START_TIME,
+            WD.END_TIME AS WD_END_TIME,
+            WD.CAMPUS_ID AS WD_CAMPUS_ID,
+            <include refid="StudentCourseColumnList"/>
+        FROM KC_OPTIONAL_TIMETABLE OT
+        LEFT JOIN (SELECT O.*,B.XXLB FROM KC_OPTIONAL_COURSE O LEFT JOIN KC_BASE_COURSE B ON B.ID = O.COURSE_ID) OC ON OC.ID = OT.OPTIONAL_COURSE_ID
+        LEFT JOIN KC_WORK_DAY WD ON WD.ID = OT.WORK_DAY_ID
+        LEFT JOIN KC_STUDENT_COURSE SC ON SC.OPTIONAL_COURSE_ID = OT.OPTIONAL_COURSE_ID
+        LEFT JOIN ZXXS_JBXX S ON S.ID = SC.STUDENT_ID
+        WHERE OC.CAMPUS_ID = #{campusId} AND OC.XN = #{xnxq.xn} AND OC.XQ = #{xnxq.xq} AND OC.XXLB = 5 AND OC.COURSE_STATUS = 2 AND SC.STATUS = 1
+        <if test="clazzes != null">
+            <choose>
+                <when test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(clazzes)">
+                    AND S.BJID IN
+                    <foreach item="clazzid" collection="clazzes" open="(" separator="," close=")">
+                        #{clazzid}
+                    </foreach>
+                </when>
+                <otherwise>
+                    AND 1 &lt;&gt; 1
+                </otherwise>
+            </choose>
+        </if>
+    </select>
+</mapper>

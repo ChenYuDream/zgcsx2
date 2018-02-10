@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">      
+<mapper namespace="org.jypj.zgcsx.dao.SpaceDao">
+
+
+
+	<select id="queryAllSpace" parameterType="map" resultType="org.jypj.zgcsx.entity.Space">
+		select
+		(select mapDate.ITEM_TEXT from EIMS_CODEMAP codeMap left join EIMS_CODEMAP_DATA mapDate on codeMap.ID=mapDate.CODEID where codeMap.CODE='cims_campus' and campus=mapDate.ITEM_VALUE) as campustext,
+		(select mapDate.ITEM_TEXT from EIMS_CODEMAP codeMap left join EIMS_CODEMAP_DATA mapDate on codeMap.ID=mapDate.CODEID where codeMap.CODE='cims_arch' and architecture=mapDate.ITEM_VALUE) as architecturetext,
+		(select mapDate.ITEM_TEXT from EIMS_CODEMAP codeMap left join EIMS_CODEMAP_DATA mapDate on codeMap.ID=mapDate.CODEID where codeMap.CODE='cims_floor' and floorid=mapDate.ITEM_VALUE) as flooridtext,
+		'('||(select mapDate.ITEM_TEXT from EIMS_CODEMAP codeMap left join EIMS_CODEMAP_DATA mapDate on codeMap.ID=mapDate.CODEID where codeMap.CODE='cims_sptype' and SPTYPE=mapDate.ITEM_VALUE)||')'||MC as MCTEXT,
+		s.*
+		from SPACE_MANAGE s where 1=1 and nvl(s.CAMPUS,' ') != ' ' and nvl(s.ARCHITECTURE,' ') != ' ' and nvl(s.FLOORID,' ') != ' '
+		<if test="campus !=null and campus !='' ">
+			and s.CAMPUS=#{campus,jdbcType=VARCHAR}
+		</if>
+		<if test="architecture !=null and architecture !='' ">
+			and s.ARCHITECTURE=#{architecture,jdbcType=VARCHAR}
+		</if>
+		<if test="floorId !=null and floorId !='' ">
+			and s.FLOORID=#{floorId,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+</mapper>   

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.jypj.zgcsx.dao.RoleDao">
+
+    <resultMap id="BaseResultMap" type="org.jypj.zgcsx.entity.Role">
+        <id column="ID" property="id" jdbcType="VARCHAR"/>
+        <result column="ROLE_NAME" property="roleName" jdbcType="VARCHAR"/>
+        <result column="ROLE_CODE" property="roleCode" jdbcType="VARCHAR"/>
+        <result column="ROLE_TYPE" property="roleType" jdbcType="VARCHAR"/>
+        <result column="DESCR" property="descr" jdbcType="VARCHAR"/>
+        <result column="SORTORDER" property="sortorder" jdbcType="DECIMAL"/>
+        <result column="ORG" property="org" jdbcType="VARCHAR"/>
+        <result column="ROLE_SYSTEM" property="roleSystem" jdbcType="VARCHAR"/>
+        <result column="FLAG" property="flag" jdbcType="VARCHAR"/>
+        <result column="CREATE_USER" property="createUser" jdbcType="VARCHAR"/>
+        <result column="CREATE_TIME" property="createTime" jdbcType="DATE"/>
+        <result column="MODIFY_USER" property="modifyUser" jdbcType="VARCHAR"/>
+        <result column="MODIFY_TIME" property="modifyTime" jdbcType="DATE"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        ID, ROLE_NAME, ROLE_CODE, ROLE_TYPE, DESCR, SORTORDER, ORG, ROLE_SYSTEM, FLAG, CREATE_USER, CREATE_TIME, MODIFY_USER, MODIFY_TIME
+    </sql>
+
+    <select id="selectByUsernameAndSys" resultMap="BaseResultMap" parameterType="map">
+        SELECT
+            role.id,
+            role.ROLE_NAME,
+            role.ROLE_CODE
+        FROM eims_role_t role INNER JOIN eims_user_role_t roleuser
+                ON role.id = roleuser.role_id
+            INNER JOIN eims_user u ON u.id = roleuser.user_id
+        WHERE u.loginname = #{loginName} AND role.ROLE_SYSTEM = #{systemNum}
+    </select>
+
+    <select id="selectByLoginName" resultMap="BaseResultMap" parameterType="string">
+        SELECT R.* FROM EIMS_USER_ROLE_T UR
+        LEFT JOIN EIMS_ROLE_T R ON UR.ROLE_ID = R.ID
+        LEFT JOIN EIMS_USER U ON U.ID = UR.USER_ID
+        WHERE U.LOGINNAME = #{loginName}
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap" parameterType="string">
+        SELECT R.* FROM EIMS_USER_ROLE_T UR
+        LEFT JOIN EIMS_ROLE_T R ON UR.ROLE_ID = R.ID
+        LEFT JOIN EIMS_USER U ON U.ID = UR.USER_ID
+        WHERE U.USERID = #{userId}
+    </select>
+</mapper>

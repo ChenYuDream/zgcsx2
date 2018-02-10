@@ -1,0 +1,74 @@
+spring:
+  profiles:
+    #active: dev
+    include:
+      - log
+      - dev
+  devtools:
+    restart:
+      enabled: false
+  output:
+    #彩色字体
+    ansi:
+      enabled: always
+  datasource:
+    driver-class-name: oracle.jdbc.OracleDriver
+    druid:
+      aop-patterns: org.jypj.zgcsx.course.service.*
+      max-active: 100
+      min-idle: 10
+      initial-size: 5
+      test-on-borrow: true
+      validation-query: SELECT 1 FROM DUAL
+      max-wait: 60000
+      test-on-return: true
+      test-while-idle: true
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 30000
+      remove-abandoned: true
+      remove-abandoned-timeout: 1800
+      log-abandoned: true
+      filters: mergeStat
+    type: com.alibaba.druid.pool.DruidDataSource
+  session:
+    store-type: redis
+  freemarker:
+#    suffix: .ftl
+#    template-loader-path: ["classpath:/templates/"]
+    settings:
+      default_encoding: UTF-8
+      auto_import: /layout/spring.ftl as spring
+      locale: zh_CN
+    cache: false
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    joda-date-time-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+  mvc:
+    locale: zh
+#mybatis
+mybatis-plus:
+  mapper-locations: classpath:org/jypj/zgcsx/course/mapper/*Mapper.xml
+  #实体扫描，多个package用逗号或者分号分隔
+  type-aliases-package: org.jypj.zgcsx.course.entity
+  #typeEnumsPackage: org.jypj.zgcsx.course.enums
+  global-config:
+    #主键类型  0:"数据库ID自增", 1:"用户输入ID",2:"全局唯一ID (数字类型唯一ID)", 3:"全局唯一ID UUID";
+    id-type: 3
+    #字段策略 0:"忽略判断",1:"非 NULL 判断"),2:"非空判断"
+    field-strategy: 2
+    #驼峰下划线转换
+    db-column-underline: true
+    #刷新mapper 调试神器
+    refresh-mapper: false
+    #数据库大写下划线转换
+    #capital-mode: true
+    #序列接口实现类配置
+    #key-generator:
+    #逻辑删除配置
+    #logic-delete-value: 0
+    #logic-not-delete-value: 1
+    #自定义填充策略接口实现
+    meta-object-handler: org.jypj.zgcsx.course.config.mybatis.CourseMetaObjectHandler
+    #自定义SQL注入器
+    #sql-injector:

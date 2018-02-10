@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.dao.CourseNoticeDao">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="org.jypj.zgcsx.entity.CourseNotice">
+		<id column="ID" property="id" />
+		<result column="NOTICE_TITLE" property="noticeTitle" />
+		<result column="NOTICE_CONTENT" property="noticeContent" />
+		<result column="NOTICE_START" property="noticeStart" />
+		<result column="NOTICE_END" property="noticeEnd" />
+		<result column="NOTICE_REMIND" property="noticeRemind" />
+		<result column="NOTICE_STICK" property="noticeStick" />
+		<result column="NOTICE_STICK_TIME" property="noticeStickTime" />
+		<result column="NOTICE_STICK_ENDDAYS" property="noticeStickEnddays" />
+		<result column="NOTICE_KEYWORD" property="noticeKeyword" />
+		<result column="NOTICEPUBSTATE" property="noticepubstate" />
+		<result column="NOTICEDETAILURL" property="noticedetailurl" />
+		<result column="ATTACHPATH" property="attachpath" />
+		<result column="XXID" property="xxid" />
+		<result column="XQID" property="xqid" />
+		<result column="CTIME" property="ctime" />
+		<result column="MTIME" property="mtime" />
+		<result column="PLACE" property="place" />
+		<result column="CIMS_XN" property="cimsXn" />
+		<result column="CIMS_XQ" property="cimsXq" />
+		<result column="CREATER" property="creater" />
+		<result column="NOTICE_LEVEL" property="noticeLevel" />
+		<result column="PROXY" property="proxy" />
+		<result column="EVEN_TYPE" property="evenType" />
+		<result column="EVEN_STYLE" property="evenStyle" />
+		<result column="EVEN_LEVEL" property="evenLevel" />
+		<result column="EVEN_PROPERTY" property="evenProperty" />
+		<result column="PLACE_ID" property="placeId" />
+		<result column="FBTYPE" property="fbtype" />
+	</resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        ID, NOTICE_TITLE, NOTICE_CONTENT, NOTICE_START, NOTICE_END, NOTICE_REMIND, NOTICE_STICK, NOTICE_STICK_TIME, NOTICE_STICK_ENDDAYS, NOTICE_KEYWORD, NOTICEPUBSTATE, NOTICEDETAILURL, ATTACHPATH, XXID, XQID, CTIME, MTIME, PLACE, CIMS_XN, CIMS_XQ, CREATER, NOTICE_LEVEL, PROXY, EVEN_TYPE, EVEN_STYLE, EVEN_LEVEL, EVEN_PROPERTY, PLACE_ID, FBTYPE
+    </sql>
+	<sql id="Base_Column_List_notice">
+		notice.ID, notice.NOTICE_TITLE, notice.NOTICE_CONTENT, notice.NOTICE_START, notice.NOTICE_END, notice.NOTICE_REMIND,
+		notice.NOTICE_STICK, notice.NOTICE_STICK_TIME, notice.NOTICE_STICK_ENDDAYS, notice.NOTICE_KEYWORD, notice.NOTICEPUBSTATE, notice.NOTICEDETAILURL, notice.ATTACHPATH,
+		notice.XXID, notice.XQID, notice.CTIME, notice.MTIME, notice.PLACE, notice.CIMS_XN, notice.CIMS_XQ, notice.CREATER, notice.NOTICE_LEVEL, notice.PROXY,
+		notice.EVEN_TYPE, notice.EVEN_STYLE, notice.EVEN_LEVEL, notice.EVEN_PROPERTY, notice.PLACE_ID, notice.FBTYPE
+	</sql>
+
+	<select id="selectCalByMap" resultMap="BaseResultMap" parameterType="map">
+		select <include refid="Base_Column_List_notice"/> from course_notice notice inner join course_notice_person person on notice.id = person.notice_id
+		where 1=1
+
+		<if test="NOTICE_START != null  and NOTICE_END != null ">
+			<!-- 事件的时间和本月有交集，都会被取出来 -->
+			<![CDATA[
+                and (  (notice.NOTICE_START >= #{NOTICE_START} and notice.NOTICE_END <= #{NOTICE_END})
+                       OR (notice.NOTICE_START >= #{NOTICE_START} and notice.NOTICE_START <= #{NOTICE_END})
+                       or (notice.NOTICE_END>=#{NOTICE_START} and notice.NOTICE_END <= #{NOTICE_END})
+                       or (  notice.NOTICE_START<=#{NOTICE_START} and notice.NOTICE_END>=#{NOTICE_END})
+                )
+            ]]>
+		</if>
+		<if test="personId !=''and personId!=null">
+			and person.PERSON_ID =#{personId}
+			and ( person.OPER is null or person.OPER ='1' )
+		</if>
+		and notice.FBTYPE='1'
+	</select>
+
+	<select id="selectListByPage" resultMap="BaseResultMap" parameterType="map">
+		select <include refid="Base_Column_List_notice"/> from course_notice notice
+		where notice.id in
+			(SELECT person.NOTICE_ID from course_notice_person person
+				where	1=1
+				<if test="personId !=null and personId!=''">
+					and person.PERSON_ID =#{personId}
+					and ( person.OPER is null or person.OPER ='1' )
+				</if>
+			)
+		AND 1=1
+		<if test="NOTICE_START !=null ">
+			and notice.NOTICE_START >= #{NOTICE_START}
+		</if>
+		<if test="NOTICE_END !=null ">
+			and notice.NOTICE_END  &lt;= #{NOTICE_END}
+		</if>
+		<if test="noticeLevel !=null and noticeLevel!=''">
+			and notice.NOTICE_LEVEL  =#{noticeLevel}
+		</if>
+		<if test="evenLevel !=null and evenLevel!=''">
+			and notice.EVEN_LEVEL  =#{evenLevel}
+		</if>
+		<if test="noticeTitle !=null and noticeTitle!=''">
+			and notice.NOTICE_TITLE  like concat(concat('%',#{noticeTitle}),'%')
+		</if>
+		and notice.FBTYPE='1'
+		<choose>
+			<when test="isTimeLine !=null and isTimeLine != ''">
+				order by notice.NOTICE_START desc,notice.id
+			</when>
+			<otherwise>
+				order by notice.CTIME desc,notice.id
+			</otherwise>
+		</choose>
+	</select>
+
+</mapper>

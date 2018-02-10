@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jypj.zgcsx.course.dao.ClazzTimetableMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="ClazzTimetableResultMap" type="org.jypj.zgcsx.course.entity.ClazzTimetable">
+        <id column="CT_ID" property="id"/>
+        <result column="CT_CREATE_USER" property="createUser"/>
+        <result column="CT_UPDATE_USER" property="updateUser"/>
+        <result column="CT_CREATE_TIME" property="createTime"/>
+        <result column="CT_UPDATE_TIME" property="updateTime"/>
+        <result column="CT_CLAZZ_ID" property="clazzId"/>
+        <result column="CT_WORK_DAY_ID" property="workDayId"/>
+        <result column="CT_TEACHER_ID" property="teacherId"/>
+        <result column="CT_COURSE_ID" property="courseId"/>
+
+        <!-- 非数据映射字段 -->
+        <result column="CT_TEANHER_NAME" property="teacherName"/>
+        <result column="CT_SECTION_INDEX" property="sectionIndex"/>
+        <result column="CT_WEEK_INDEX" property="weekIndex"/>
+        <result column="CT_COURSE_NAME" property="courseName"/>
+        <result column="CT_GRADE_ID" property="gradeId"/>
+        <result column="CT_GRADE_NAME" property="gradeName"/>
+        <result column="CT_CLAZZ_NAME" property="clazzName"/>
+        <result column="CT_STUDENT_COUNT" property="studentCount"/>
+        <result column="CT_CHOOSE_STUDENT_COUNT" property="chooseStudentCount"/>
+        <result column="CT_CAMPUS_ID" property="campusId"/>
+        <result column="CT_CAMPUS_NAME" property="campusName"/>
+        <result column="CT_KCCC" property="kccc"/>
+        <result column="CT_KCDJ" property="kcdj"/>
+        <result column="CT_KCLB" property="kclb"/>
+        <result column="CT_XXLB" property="xxlb"/>
+        <result column="CT_DESCRIPTION" property="description"/>
+
+        <!--日程详情-->
+        <association property="workDay" resultMap="org.jypj.zgcsx.course.dao.WorkDayMapper.WorkDayResultMap"/>
+    </resultMap>
+
+    <!-- 公用课表查询教师 -->
+    <resultMap id="TeacherClazzTimetableResultMap" type="org.jypj.zgcsx.course.entity.ClazzTimetable"
+               extends="ClazzTimetableResultMap">
+        <collection column="{workDayId=WD_ID, clazzId=CT_CLAZZ_ID}" property="teachers"
+                    select="org.jypj.zgcsx.course.dao.TeacherMapper.selectTeachersByClazzId"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="ClazzTimetableColumnList">
+        CT.ID AS CT_ID,
+        CT.CREATE_USER AS CT_CREATE_USER,
+        CT.UPDATE_USER AS CT_UPDATE_USER,
+        CT.CREATE_TIME AS CT_CREATE_TIME,
+        CT.UPDATE_TIME AS CT_UPDATE_TIME,
+        CT.CLAZZ_ID AS CT_CLAZZ_ID,
+        CT.WORK_DAY_ID AS CT_WORK_DAY_ID,
+        CT.TEACHER_ID AS CT_TEACHER_ID,
+        CT.COURSE_ID AS CT_COURSE_ID
+    </sql>
+
+    <sql id="ClazzTimetableColumnListDistinct">
+        CT.CLAZZ_ID AS CT_CLAZZ_ID,
+        CT.TEACHER_ID AS CT_TEACHER_ID,
+        CT.COURSE_ID AS CT_COURSE_ID
+    </sql>
+
+    <!--日程列-->
+    <sql id="WorkDayColumnList">
+        WD.ID AS WD_ID,
+        WD.CREATE_USER AS WD_CREATE_USER,
+        WD.UPDATE_USER AS WD_UPDATE_USER,
+        WD.CREATE_TIME AS WD_CREATE_TIME,
+        WD.UPDATE_TIME AS WD_UPDATE_TIME,
+        WD.XN AS WD_XN,
+        WD.XQ AS WD_XQ,
+        WD.WEEK_OF_TERM AS WD_WEEK_OF_TERM,
+        WD.DAY_OF_WEEK AS WD_DAY_OF_WEEK,
+        WD.PERIOD AS WD_PERIOD,
+        WD.START_TIME AS WD_START_TIME,
+        WD.END_TIME AS WD_END_TIME
+    </sql>
+
+    <sql id="ClazzTimetableTableName">
+        KC_CLAZZ_TIMETABLE CT
+    </sql>
+
+    <sql id="SelectConflictTeacherNameBaseCondition">
+        and ct.work_day_id=#{clazzTimetable.workDayId}
+        and ct.clazz_id=#{clazzTimetable.clazzId}
+        and ct.teacher_id!=#{clazzTimetable.teacherId}
+    </sql>
+
+
+    <delete id="deleteConflictTeacherCourse">
+        delete from kc_clazz_timetable where id in (
+        select ct.id from kc_clazz_timetable ct
+        left join zxjz_jbxx jz on ct.teacher_id = jz.id
+         left join zxxx_bjxx bj on ct.clazz_id = bj.id
+          where work_day_id in
+                     (${workDayIds})
+                 and bj.jbid =#{gradeId})
+    </delete>
+
+    <delete id="deleteBeforeSaveTeacherCourse">
+        delete from kc_clazz_timetable where id in (
+        select ct.id from kc_clazz_timetable ct
+        left join kc_work_day wd on ct.work_day_id=wd.id
+        where wd.xn=#{xnxq.xn} and wd.xq=#{xnxq.xq}
+        and ct.teacher_id=#{teacherId}
+        )
+    </delete>
+
+    <select id="selectConflictTeacherName" resultType="java.lang.String">
+        select WMSYS.WM_CONCAT(distinct jz.xm) from kc_clazz_timetable ct
+        left join zxjz_jbxx jz on ct.teacher_id=jz.id
+        left join zxxx_bjxx bj on ct.clazz_id=bj.id
+        where ct.work_day_id in (${workDayIds})
+        and bj.jbid=#{gradeId}
+    </select>
+
+    <select id="selectRequiredCourseConflictUnSaveTeacherName" resultType="java.lang.String">
+        select WMSYS.WM_CONCAT(jz.xm) from kc_clazz_timetable ct
+        left join zxjz_jbxx jz on ct.teacher_id=jz.id
+        where 1=1
+        <include refid="SelectConflictTeacherNameBaseCondition"/>
+        AND ct.course_id !=#{clazzTimetable.courseId}
+    </select>
+
+    <select id="selectRequiredCourseConflictUnSaveCourseName" resultType="java.lang.String">
+        select WMSYS.WM_CONCAT(bc.course_name) from kc_clazz_timetable ct
+        left join kc_base_course bc on ct.course_id=bc.id
+        where 1=1
+        and ct.work_day_id=#{clazzTimetable.workDayId}
+        and ct.clazz_id=#{clazzTimetable.clazzId}
+        and ct.teacher_id is null
+        AND ct.course_id !=#{clazzTimetable.courseId}
+    </select>
+
+    <select id="selectRequiredCourseConflictSaveTeacherName" resultType="java.lang.String">
+        select WMSYS.WM_CONCAT(jz.xm) from kc_clazz_timetable ct
+        left join zxjz_jbxx jz on ct.teacher_id=jz.id
+        where 1=1
+        <include refid="SelectConflictTeacherNameBaseCondition"/>
+        AND ct.course_id =#{clazzTimetable.courseId}
+    </select>
+
+    <select id="selectSelectiveCoursePlaceholderConflictUnSaveGradeName" resultType="java.lang.String">
+        select nj.jbmc from kc_grade_timetable gt
+        left join zxxx_bjxx bj on bj.jbid=gt.grade_id
+        left join zxxx_njxx nj on nj.id=gt.grade_id
+        where bj.id=#{clazzTimetable.clazzId}
+        and gt.work_day_id=#{clazzTimetable.workDayId}
+    </select>
+
+    <!--选修课-->
+    <select id="selectSelectiveCourseConflictUnSaveCourseName" resultType="java.lang.String">
+        select wmsys.WM_CONCAT(distinct oc.alias_name) from KC_OPTIONAL_TIMETABLE ot
+        left join kc_optional_course oc on ot.optional_course_id=oc.id
+        left join kc_teacher_course tc on tc.optional_course_id=ot.optional_course_id
+        left join kc_work_day wd on ot.work_day_id=wd.id
+        left join kc_base_course bc on oc.course_id=bc.id
+        where wd.xn=#{clazzTimetable.workDay.xn}
+        and wd.xq=#{clazzTimetable.workDay.xq}
+        and wd.day_of_week=#{clazzTimetable.workDay.dayOfWeek}
+        and not (to_char(wd.start_time,'hh24:mi') &gt; to_char(#{clazzTimetable.workDay.endTime},'hh24:mi')
+         or to_char(wd.end_time,'hh24:mi') &lt;to_char(#{clazzTimetable.workDay.startTime},'hh24:mi'))
+        and tc.teacher_id=#{clazzTimetable.teacherId}
+    </select>
+
+    <select id="selectTeacherName" resultType="java.lang.String">
+        select WMSYS.WM_CONCAT(jz.xm) from KC_CLAZZ_TIMETABLE t
+        left join ZXJZ_JBXX jz on t.teacher_id=jz.id
+        where t.clazz_id=#{clazzId}
+        and t.work_day_id=#{workDayId}
+    </select>
+
+    <select id="selectListDetail" resultMap="ClazzTimetableResultMap">
+        select
+        <include refid="ClazzTimetableColumnList"/>,
+        jz.xm as CT_TEACHER_NAME,
+        xq.xqmc as CT_CAMPUS_NAME,
+        xq.id as CT_CAMPUS_ID,
+        (nj.jbmc||'('||bj.bjmc||')班') as CT_CLAZZ_NAME,
+        bc.course_name as CT_COURSE_NAME,
+        wd.day_of_week as CT_WEEK_INDEX,
+        wd.period as CT_SECTION_INDEX
+        from
+        <include refid="ClazzTimetableTableName"/>
+        LEFT JOIN zxjz_jbxx jz on ct.teacher_id=jz.id
+        LEFT JOIN zxxx_bjxx bj on ct.clazz_id=bj.id
+        LEFT JOIN zxxx_njxx nj on bj.jbid=nj.id
+        LEFT JOIN ZXXX_XQ xq on xq.id=bj.xqid
+        LEFT JOIN kc_base_course bc on bc.id = ct.course_id
+        LEFT JOIN kc_work_day wd on wd.id =ct.work_day_id
+        WHERE 1=1
+        <if test="teacherId!=null and teacherId!=''">
+            AND ct.teacher_id=#{teacherId}
+        </if>
+        <if test="xn!=null and xn!=''">
+            AND wd.xn=#{xn}
+        </if>
+        <if test="xq!=null and xq!=''">
+            AND wd.xq=#{xq}
+        </if>
+    </select>
+
+    <select id="selectCourseTimetable" resultMap="ClazzTimetableResultMap">
+        SELECT
+        <include refid="ClazzTimetableColumnList"/>,
+        <include refid="WorkDayColumnList"/>,
+        BC.COURSE_NAME AS CT_COURSE_NAME, BC.DESCRIPTION AS CT_DESCRIPTION,
+        ZB.JBID AS CT_GRADE_ID, ZB.JBMC AS CT_GRADE_NAME, ZB.BJMC AS CT_CLAZZ_NAME,
+        ZJ.XM AS CT_TEANHER_NAME
+        FROM
+        <include refid="ClazzTimetableTableName"/>
+        LEFT JOIN ZXJZ_JBXX ZJ ON ZJ.ID = CT.TEACHER_ID
+        LEFT JOIN KC_WORK_DAY WD ON CT.WORK_DAY_ID = WD.ID
+        LEFT JOIN
+        <include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseTableName"/>
+        ON CT.COURSE_ID = BC.ID
+        LEFT JOIN (SELECT BJ.*,NJ.JBMC FROM ZXXX_BJXX BJ LEFT JOIN ZXXX_NJXX NJ ON BJ.JBID = NJ.ID) ZB ON CT.CLAZZ_ID =
+        ZB.ID
+        WHERE WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq} AND WD.WEEK_OF_TERM IS NULL
+        <if test="clazzTimetable.teacherId != null and clazzTimetable.teacherId != ''">
+            AND CT.TEACHER_ID = #{clazzTimetable.teacherId}
+        </if>
+        <if test="clazzTimetable.clazzId != null and clazzTimetable.clazzId != ''">
+            AND CT.CLAZZ_ID = #{clazzTimetable.clazzId}
+        </if>
+        AND ZB.VALID = 1
+    </select>
+
+    <select id="selectCourseTimetableTeachers" resultMap="TeacherClazzTimetableResultMap">
+        SELECT
+        <include refid="ClazzTimetableColumnList"/>,
+        <include refid="WorkDayColumnList"/>,
+        BC.COURSE_NAME AS CT_COURSE_NAME, BC.DESCRIPTION AS CT_DESCRIPTION,
+        ZB.JBID AS CT_GRADE_ID, ZB.JBMC AS CT_GRADE_NAME, ZB.BJMC AS CT_CLAZZ_NAME
+        FROM
+        <include refid="ClazzTimetableTableName"/>
+        LEFT JOIN KC_WORK_DAY WD ON CT.WORK_DAY_ID = WD.ID
+        LEFT JOIN
+        <include refid="org.jypj.zgcsx.course.dao.BaseCourseMapper.BaseCourseTableName"/>
+        ON CT.COURSE_ID = BC.ID
+        LEFT JOIN (SELECT BJ.*,NJ.JBMC FROM ZXXX_BJXX BJ LEFT JOIN ZXXX_NJXX NJ ON BJ.JBID = NJ.ID) ZB ON CT.CLAZZ_ID =
+        ZB.ID
+        WHERE WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq} AND WD.WEEK_OF_TERM IS NULL
+        <if test="clazzTimetable.teacherId != null and clazzTimetable.teacherId != ''">
+            AND CT.TEACHER_ID = #{clazzTimetable.teacherId}
+        </if>
+        <if test="clazzTimetable.clazzId != null and clazzTimetable.clazzId != ''">
+            AND CT.CLAZZ_ID = #{clazzTimetable.clazzId}
+        </if>
+        AND ZB.VALID = 1
+    </select>
+
+
+    <select id="selectBasicWork" resultMap="ClazzTimetableResultMap">
+        SELECT DISTINCT
+        <include refid="ClazzTimetableColumnListDistinct"/>,
+        ZJ.XM AS CT_TEANHER_NAME,
+        BC.COURSE_NAME AS CT_COURSE_NAME,
+        BC.DESCRIPTION AS CT_DESCRIPTION,
+        KC.ITEM_TEXT AS CT_KCDJ,
+        ZB.JBID AS CT_GRADE_ID, ZB.JBMC AS CT_GRADE_NAME, ZB.BJMC AS CT_CLAZZ_NAME,
+        XS.STUDENTCOUNT AS CT_STUDENT_COUNT, XS.STUDENTCOUNT AS CT_CHOOSE_STUDENT_COUNT
+        FROM KC_CLAZZ_TIMETABLE CT
+        LEFT JOIN ZXJZ_JBXX ZJ ON ZJ.ID = CT.TEACHER_ID
+        LEFT JOIN KC_WORK_DAY WD ON CT.WORK_DAY_ID = WD.ID
+        LEFT JOIN KC_BASE_COURSE BC ON CT.COURSE_ID = BC.ID
+        LEFT JOIN (SELECT J.ITEM_VALUE,J.ITEM_TEXT FROM EIMS_CODEMAP K LEFT JOIN EIMS_CODEMAP_DATA J ON K.ID = J.CODEID
+        WHERE K.CODE = 'cims_kcly_sc') KC ON KC.ITEM_VALUE = BC.KCDJ
+        LEFT JOIN (SELECT BJ.*,NJ.JBMC FROM ZXXX_BJXX BJ LEFT JOIN ZXXX_NJXX NJ ON BJ.JBID = NJ.ID) ZB ON CT.CLAZZ_ID =
+        ZB.ID
+        LEFT JOIN (SELECT COUNT(0) AS STUDENTCOUNT, ZS.BJID FROM ZXXS_JBXX ZS GROUP BY ZS.BJID) XS ON CT.CLAZZ_ID =
+        XS.BJID
+        WHERE WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq} AND WD.WEEK_OF_TERM IS NULL
+        AND CT.TEACHER_ID = #{clazzTimetable.teacherId}
+        AND ZB.VALID = 1
+        ORDER BY ZB.JBMC, TO_NUMBER(ZB.BJMC)
+    </select>
+
+    <select id="selectPublicTimetable" resultMap="TeacherClazzTimetableResultMap">
+        SELECT DISTINCT
+        CT.CLAZZ_ID AS CT_CLAZZ_ID,
+        WD.ID AS WD_ID,
+        WD.XN AS WD_XN,
+        WD.XQ AS WD_XQ,
+        WD.WEEK_OF_TERM AS WD_WEEK_OF_TERM,
+        WD.DAY_OF_WEEK AS WD_DAY_OF_WEEK,
+        WD.PERIOD AS WD_PERIOD,
+        WD.START_TIME AS WD_START_TIME,
+        WD.END_TIME AS WD_END_TIME,
+        BC.COURSE_NAME AS CT_COURSE_NAME,
+        BC.DESCRIPTION AS CT_DESCRIPTION,
+        KCCC.ITEM_TEXT AS CT_KCCC, KCDJ.ITEM_TEXT AS CT_KCDJ, KCLB.ITEM_TEXT AS CT_KCLB, XXLB.ITEM_TEXT AS CT_XXLB
+        FROM KC_CLAZZ_TIMETABLE CT
+        LEFT JOIN KC_WORK_DAY WD ON CT.WORK_DAY_ID = WD.ID
+        LEFT JOIN KC_BASE_COURSE BC ON CT.COURSE_ID = BC.ID
+        LEFT JOIN (SELECT J.ITEM_VALUE,J.ITEM_TEXT FROM EIMS_CODEMAP K LEFT JOIN EIMS_CODEMAP_DATA J ON K.ID = J.CODEID
+        WHERE K.CODE = 'cims_kc_cc') KCCC ON KCCC.ITEM_VALUE = BC.KCCC
+        LEFT JOIN (SELECT J.ITEM_VALUE,J.ITEM_TEXT FROM EIMS_CODEMAP K LEFT JOIN EIMS_CODEMAP_DATA J ON K.ID = J.CODEID
+        WHERE K.CODE = 'cims_kcly_sc') KCDJ ON KCDJ.ITEM_VALUE = BC.KCDJ
+        LEFT JOIN (SELECT J.ITEM_VALUE,J.ITEM_TEXT FROM EIMS_CODEMAP K LEFT JOIN EIMS_CODEMAP_DATA J ON K.ID = J.CODEID
+        WHERE K.CODE = 'cims_kcly_ll') KCLB ON KCLB.ITEM_VALUE = BC.KCLB
+        LEFT JOIN (SELECT J.ITEM_VALUE,J.ITEM_TEXT FROM EIMS_CODEMAP K LEFT JOIN EIMS_CODEMAP_DATA J ON K.ID = J.CODEID
+        WHERE K.CODE = 'cims_kc_xxlb') XXLB ON XXLB.ITEM_VALUE = BC.XXLB
+        WHERE WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq} AND WD.WEEK_OF_TERM IS NULL
+        <if test="clazzTimetable.clazzId != null and clazzTimetable.clazzId != ''">
+            AND CT.CLAZZ_ID = #{clazzTimetable.clazzId}
+        </if>
+
+        UNION ALL
+
+        SELECT DISTINCT
+        #{clazzTimetable.clazzId} AS CT_CLAZZ_ID,
+        WD.ID AS WD_ID,
+        WD.XN AS WD_XN,
+        WD.XQ AS WD_XQ,
+        WD.WEEK_OF_TERM AS WD_WEEK_OF_TERM,
+        WD.DAY_OF_WEEK AS WD_DAY_OF_WEEK,
+        WD.PERIOD AS WD_PERIOD,
+        WD.START_TIME AS WD_START_TIME,
+        WD.END_TIME AS WD_END_TIME,
+        '选修' AS CT_COURSE_NAME,
+        '' AS CT_DESCRIPTION,
+        '' AS CT_KCCC,'' AS CT_KCDJ,'' AS CT_KCLB, '' AS CT_XXLB FROM KC_GRADE_TIMETABLE GT
+        LEFT JOIN ZXXX_NJXX ZN ON ZN.ID = GT.GRADE_ID
+        LEFT JOIN KC_WORK_DAY WD ON WD.ID = GT.WORK_DAY_ID
+        WHERE WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq}
+        <if test="clazzTimetable.campusId != null and clazzTimetable.campusId != ''">
+            AND ZN.XQID = #{clazzTimetable.campusId}
+        </if>
+        <if test="clazzTimetable.gradeId != null and clazzTimetable.gradeId != ''">
+            AND GT.GRADE_ID = #{clazzTimetable.gradeId}
+        </if>
+        AND ZN.VALID = 1
+    </select>
+
+    <select id="selectTeacherTeach" resultMap="ClazzTimetableResultMap">
+        SELECT DISTINCT
+        <include refid="ClazzTimetableColumnListDistinct"/>,
+        ZJ.XM AS CT_TEANHER_NAME,
+        BC.COURSE_NAME AS CT_COURSE_NAME,
+        BC.DESCRIPTION AS CT_DESCRIPTION,
+        KC.ITEM_TEXT AS CT_XXLB,
+        ZB.JBID AS CT_GRADE_ID, ZB.JBMC AS CT_GRADE_NAME, ZB.BJMC AS CT_CLAZZ_NAME,
+        ZX.XQMC AS CT_CAMPUS_NAME
+        FROM KC_CLAZZ_TIMETABLE CT
+        LEFT JOIN ZXJZ_JBXX ZJ ON ZJ.ID = CT.TEACHER_ID
+        LEFT JOIN KC_WORK_DAY WD ON CT.WORK_DAY_ID = WD.ID
+        LEFT JOIN KC_BASE_COURSE BC ON CT.COURSE_ID = BC.ID
+        LEFT JOIN (SELECT J.ITEM_VALUE,J.ITEM_TEXT FROM EIMS_CODEMAP K LEFT JOIN EIMS_CODEMAP_DATA J ON K.ID = J.CODEID
+        WHERE K.CODE = 'cims_kc_xxlb') KC ON KC.ITEM_VALUE = BC.XXLB
+        LEFT JOIN (SELECT BJ.*,NJ.JBMC FROM ZXXX_BJXX BJ LEFT JOIN ZXXX_NJXX NJ ON BJ.JBID = NJ.ID) ZB ON CT.CLAZZ_ID =
+        ZB.ID
+        LEFT JOIN ZXXX_XQ ZX ON ZX.ID = ZB.XQID
+        WHERE WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq} AND WD.WEEK_OF_TERM IS NULL
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(clazzTimetable.campusId)">
+            AND ZX.ID = #{clazzTimetable.campusId}
+        </if>
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(clazzTimetable.teacherName)">
+            AND ZJ.XM LIKE '%'||#{clazzTimetable.teacherName}||'%'
+        </if>
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(clazzTimetable.courseName)">
+            AND BC.COURSE_NAME LIKE '%'||#{clazzTimetable.courseName}||'%'
+        </if>
+        <if test="clazzes != null">
+            <choose>
+                <when test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(clazzes)">
+                    AND ZB.ID IN
+                    <foreach item="clazzid" collection="clazzes" open="(" separator="," close=")">
+                        #{clazzid}
+                    </foreach>
+                </when>
+                <otherwise>
+                    AND 1 &lt;&gt; 1
+                </otherwise>
+            </choose>
+        </if>
+        AND ZB.VALID = 1
+        AND CT.TEACHER_ID IS NOT NULL
+        ORDER BY CT_GRADE_NAME, TO_NUMBER(CT_CLAZZ_NAME), CT.TEACHER_ID||CT.COURSE_ID
+    </select>
+
+    <select id="selectTeacherOwn" resultMap="ClazzTimetableResultMap">
+        SELECT DISTINCT CT.TEACHER_ID AS CT_TEACHER_ID, ZB.XQID AS CT_CAMPUS_ID, ZB.JBID AS CT_GRADE_ID, CT.CLAZZ_ID AS CT_CLAZZ_ID FROM KC_CLAZZ_TIMETABLE CT
+        LEFT JOIN ZXXX_BJXX ZB ON CT.CLAZZ_ID = ZB.ID
+        LEFT JOIN KC_WORK_DAY WD ON CT.WORK_DAY_ID = WD.ID
+        WHERE WD.XN = #{xnxq.xn} AND WD.XQ = #{xnxq.xq} AND ZB.VALID = 1
+        AND CT.TEACHER_ID = #{clazzTimetable.teacherId}
+    </select>
+
+    <select id="selectTimetableOwn" resultMap="ClazzTimetableResultMap">
+        SELECT DISTINCT
+        BC.ID AS CT_COURSE_ID,
+        BC.COURSE_NAME AS CT_COURSE_NAME,
+        ZB.BJMC AS CT_CLAZZ_NAME,
+        ZN.JBMC AS CT_GRADE_NAME,
+        ZJ.XM AS CT_TEANHER_NAME,
+        (SELECT COUNT(0) FROM ZXXS_JBXX WHERE VALID = 1 AND BJID = #{clazzId}) AS CT_STUDENT_COUNT
+        FROM
+        <include refid="ClazzTimetableTableName"/>
+        LEFT JOIN KC_BASE_COURSE BC ON BC.ID = CT.COURSE_ID
+        LEFT JOIN ZXXX_BJXX ZB ON ZB.ID = CT.CLAZZ_ID
+        LEFT JOIN ZXXX_NJXX ZN ON ZN.ID = ZB.JBID
+        LEFT JOIN ZXJZ_JBXX ZJ ON ZJ.ID = CT.TEACHER_ID
+        WHERE CT.CLAZZ_ID = #{clazzId}
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(workDayId)">
+            AND CT.WORK_DAY_ID = #{workDayId}
+        </if>
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(courseId)">
+            AND CT.COURSE_ID = #{courseId}
+        </if>
+        <choose>
+            <when test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(teacherId)">
+                AND CT.TEACHER_ID = #{teacherId}
+            </when>
+            <otherwise>
+                AND CT.TEACHER_ID IS NULL
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectTimetableTeacherOwn" resultMap="TeacherClazzTimetableResultMap">
+        SELECT DISTINCT
+        BC.ID AS CT_COURSE_ID,
+        #{workDayId} AS WD_ID,
+        #{clazzId} AS CT_CLAZZ_ID,
+        BC.COURSE_NAME AS CT_COURSE_NAME,
+        ZB.BJMC AS CT_CLAZZ_NAME,
+        ZN.JBMC AS CT_GRADE_NAME,
+        (SELECT COUNT(0) FROM ZXXS_JBXX WHERE VALID = 1 AND BJID = #{clazzId}) AS CT_STUDENT_COUNT
+        FROM
+        <include refid="ClazzTimetableTableName"/>
+        LEFT JOIN KC_BASE_COURSE BC ON BC.ID = CT.COURSE_ID
+        LEFT JOIN ZXXX_BJXX ZB ON ZB.ID = CT.CLAZZ_ID
+        LEFT JOIN ZXXX_NJXX ZN ON ZN.ID = ZB.JBID
+        WHERE CT.CLAZZ_ID = #{clazzId}
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(workDayId)">
+            AND CT.WORK_DAY_ID = #{workDayId}
+        </if>
+        <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(courseId)">
+            AND CT.COURSE_ID = #{courseId}
+        </if>
+        <choose>
+            <when test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(teacherId)">
+                AND CT.TEACHER_ID = #{teacherId}
+            </when>
+            <otherwise>
+                AND CT.TEACHER_ID IS NULL
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectTimetable" resultMap="ClazzTimetableResultMap">
+        SELECT
+        <include refid="ClazzTimetableColumnList"/>
+        FROM
+        <include refid="ClazzTimetableTableName"/>
+        <where>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(clazzId)">
+                CT.CLAZZ_ID = #{clazzId}
+            </if>
+            <if test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(workDayId)">
+                AND CT.WORK_DAY_ID = #{workDayId}
+            </if>
+            <choose>
+                <when test="@org.jypj.zgcsx.common.utils.Ognl@isNotEmpty(teacherId)">
+                    AND CT.TEACHER_ID = #{teacherId}
+                </when>
+                <otherwise>
+                    AND CT.TEACHER_ID IS NULL
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+</mapper>
